@@ -1,263 +1,491 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>ISL V4 Live Subtitle</title>
 
-<style>
-    * {
-        box-sizing: border-box;
-    }
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-    body {
-        margin: 0;
-        min-height: 100vh;
-        background: #111;
-        color: #fff;
-        font-family: Arial, Helvetica, sans-serif;
-    }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #0f1115;
+            color: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+        }
 
-    .app {
-        width: 95%;
-        max-width: 1200px;
-        margin: 24px auto;
-    }
+        .app {
+            width: min(1250px, 94vw);
+            margin: 28px auto 50px;
+        }
 
-    h1 {
-        text-align: center;
-        margin: 0 0 8px;
-    }
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
 
-    .subtitle {
-        text-align: center;
-        color: #aaa;
-        margin-bottom: 24px;
-    }
+        .header h1 {
+            margin: 0;
+            font-size: clamp(28px, 4vw, 44px);
+        }
 
-    .layout {
-        display: grid;
-        grid-template-columns: 1.4fr 1fr;
-        gap: 18px;
-    }
+        .header p {
+            margin: 8px 0 0;
+            color: #a8adb7;
+            font-size: 16px;
+        }
 
-    .card {
-        background: #1d1d1d;
-        padding: 16px;
-        border-radius: 14px;
-    }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.35fr 1fr;
+            gap: 20px;
+        }
 
-    .camera {
-        position: relative;
-        background: #000;
-        aspect-ratio: 4 / 3;
-        overflow: hidden;
-        border-radius: 10px;
-    }
+        .card {
+            background: #1a1d23;
+            border: 1px solid #2a2f38;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
 
-    #video,
-    #canvas {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+        .camera-box {
+            position: relative;
+            background: #000;
+            border-radius: 14px;
+            overflow: hidden;
+            aspect-ratio: 4 / 3;
+        }
 
-    #video {
-        transform: scaleX(-1);
-    }
+        #video,
+        #canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-    .status {
-        padding: 10px;
-        margin-top: 10px;
-        background: #2a2a2a;
-        border-radius: 8px;
-        min-height: 40px;
-    }
+        #video {
+            transform: scaleX(-1);
+        }
 
-    button {
-        margin: 10px 6px 0 0;
-        padding: 10px 15px;
-        border: 0;
-        border-radius: 8px;
-        cursor: pointer;
-    }
+        .status {
+            margin-top: 12px;
+            padding: 11px 13px;
+            min-height: 42px;
+            border-radius: 10px;
+            background: #242932;
+            color: #dce1e9;
+            font-size: 14px;
+        }
 
-    button:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-    }
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
 
-    .label {
-        margin-top: 16px;
-        margin-bottom: 6px;
-        color: #aaa;
-        font-size: 13px;
-    }
+        button {
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 17px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #f1f3f5;
+            color: #14171c;
+        }
 
-    .prediction {
-        font-size: 28px;
-        font-weight: bold;
-    }
+        button:hover:not(:disabled) {
+            opacity: 0.9;
+        }
 
-    .confidence {
-        font-size: 17px;
-    }
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
 
-    .sentence {
-        font-size: 30px;
-        font-weight: bold;
-        background: #101010;
-        padding: 20px;
-        border-radius: 10px;
-        min-height: 120px;
-        margin-top: 8px;
-    }
+        .section-label {
+            color: #9ea5b1;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+        }
 
-    .words {
-        color: #bbb;
-        margin-top: 12px;
-        min-height: 45px;
-    }
+        .prediction {
+            font-size: clamp(30px, 4vw, 42px);
+            line-height: 1.1;
+            font-weight: 700;
+        }
 
-    @media (max-width: 800px) {
-        .layout {
-            grid-template-columns: 1fr;
+        .confidence-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #ccd1da;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 10px;
+            background: #2a2f37;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .confidence-fill {
+            width: 0%;
+            height: 100%;
+            border-radius: 999px;
+            background: #63e6be;
+            transition: width 0.2s ease;
+        }
+
+        .sentence-box {
+            min-height: 150px;
+            margin-top: 10px;
+            padding: 20px;
+            background: #101217;
+            border: 1px solid #252a33;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
         }
 
         .sentence {
-            font-size: 24px;
+            font-size: clamp(25px, 3vw, 34px);
+            line-height: 1.35;
+            font-weight: 700;
         }
-    }
-</style>
 
+        .words {
+            min-height: 40px;
+            margin-top: 8px;
+            color: #c1c7d0;
+            line-height: 1.6;
+        }
+
+        .supported {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid #2b3038;
+        }
+
+        .sign-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .sign-chip {
+            padding: 7px 10px;
+            background: #262b34;
+            border: 1px solid #343b47;
+            border-radius: 999px;
+            color: #e7eaf0;
+            font-size: 12px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: #1a1d23;
+            border: 1px solid #2a2f38;
+            border-radius: 16px;
+            padding: 18px;
+        }
+
+        .info-card h3 {
+            margin: 0 0 8px;
+            font-size: 17px;
+        }
+
+        .info-card p {
+            margin: 0;
+            color: #aeb4be;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .demo-box {
+            margin-top: 10px;
+            color: #cbd0d8;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .footer-note {
+            margin-top: 22px;
+            text-align: center;
+            color: #7f8793;
+            font-size: 13px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .app {
+                width: 94vw;
+                margin-top: 18px;
+            }
+
+            .card,
+            .info-card {
+                padding: 14px;
+            }
+
+            .sentence-box {
+                min-height: 130px;
+                padding: 16px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="app">
 
-<h1>ISL V4 Live Subtitle</h1>
+    <!-- HEADER -->
 
-<div class="subtitle">
-    Indian Sign Language → Live English Subtitle
-</div>
+    <header class="header">
+        <h1>ISL V4 Live Subtitle</h1>
+        <p>Indian Sign Language → Live English Subtitle</p>
+    </header>
 
-<div class="layout">
 
-    <!-- ================================================= -->
-    <!-- CAMERA -->
-    <!-- ================================================= -->
+    <!-- MAIN AREA -->
 
-    <div class="card">
+    <div class="main-grid">
 
-        <div class="camera">
+        <!-- CAMERA CARD -->
 
-            <video
-                id="video"
-                autoplay
-                playsinline
-                muted>
-            </video>
+        <section class="card">
 
-            <canvas id="canvas"></canvas>
+            <div class="camera-box">
 
-        </div>
+                <video
+                    id="video"
+                    autoplay
+                    playsinline
+                    muted>
+                </video>
 
-        <div
-            id="status"
-            class="status">
-            Ready. Click Start Camera.
-        </div>
+                <canvas id="canvas"></canvas>
 
-        <button id="startButton">
-            Start Camera
-        </button>
+            </div>
 
-        <button
-            id="pauseButton"
-            disabled>
-            Pause
-        </button>
 
-        <button
-            id="clearButton"
-            disabled>
-            Clear
-        </button>
+            <div
+                id="status"
+                class="status">
+                Ready. Click Start Camera.
+            </div>
 
-        <button
-            id="undoButton"
-            disabled>
-            Undo
-        </button>
+
+            <div class="button-row">
+
+                <button
+                    id="startButton">
+                    Start Camera
+                </button>
+
+                <button
+                    id="pauseButton"
+                    disabled>
+                    Pause
+                </button>
+
+                <button
+                    id="clearButton"
+                    disabled>
+                    Clear
+                </button>
+
+                <button
+                    id="undoButton"
+                    disabled>
+                    Undo
+                </button>
+
+            </div>
+
+
+            <div class="supported">
+
+                <div class="section-label">
+                    SUPPORTED SIGNS
+                </div>
+
+                <div class="sign-grid">
+
+                    <span class="sign-chip">BAD</span>
+                    <span class="sign-chip">FOOD</span>
+                    <span class="sign-chip">GOOD</span>
+                    <span class="sign-chip">HELP</span>
+                    <span class="sign-chip">WATER</span>
+                    <span class="sign-chip">WELCOME</span>
+                    <span class="sign-chip">WHAT</span>
+                    <span class="sign-chip">WHERE</span>
+                    <span class="sign-chip">WHO</span>
+                    <span class="sign-chip">YOU</span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- RESULT CARD -->
+
+        <section class="card">
+
+            <div class="section-label">
+                AI PREDICTION
+            </div>
+
+            <div
+                id="prediction"
+                class="prediction">
+                Waiting...
+            </div>
+
+
+            <div class="confidence-row">
+
+                <span>
+                    Confidence
+                </span>
+
+                <strong
+                    id="confidence">
+                    0%
+                </strong>
+
+            </div>
+
+
+            <div class="confidence-bar">
+
+                <div
+                    id="confidenceFill"
+                    class="confidence-fill">
+                </div>
+
+            </div>
+
+
+            <div
+                class="section-label"
+                style="margin-top:22px;">
+                SENTENCE
+            </div>
+
+
+            <div class="sentence-box">
+
+                <div
+                    id="sentence"
+                    class="sentence">
+                    ...
+                </div>
+
+            </div>
+
+
+            <div
+                class="section-label"
+                style="margin-top:18px;">
+                RECOGNIZED WORDS
+            </div>
+
+
+            <div
+                id="words"
+                class="words">
+                ...
+            </div>
+
+        </section>
 
     </div>
 
 
-    <!-- ================================================= -->
-    <!-- RESULTS -->
-    <!-- ================================================= -->
+    <!-- INFORMATION -->
 
-    <div class="card">
+    <div class="info-grid">
 
-        <div class="label">
-            AI PREDICTION
-        </div>
+        <section class="info-card">
 
-        <div
-            id="prediction"
-            class="prediction">
-            Waiting...
-        </div>
+            <h3>
+                How to Use
+            </h3>
 
-        <div class="label">
-            CONFIDENCE
-        </div>
+            <p>
+                Click Start Camera and allow camera access.
+                Keep your complete hand visible and show
+                one sign at a time. After a sign is accepted,
+                briefly remove your hand before repeating it.
+            </p>
 
-        <div
-            id="confidence"
-            class="confidence">
-            0%
-        </div>
+        </section>
 
-        <div class="label">
-            SENTENCE
-        </div>
 
-        <div
-            id="sentence"
-            class="sentence">
-            ...
-        </div>
+        <section class="info-card">
 
-        <div class="label">
-            RECOGNIZED WORDS
-        </div>
+            <h3>
+                Live Recognition
+            </h3>
 
-        <div
-            id="words"
-            class="words">
-            ...
-        </div>
+            <p>
+                The browser uses MediaPipe Hands to extract
+                hand landmarks. A 30-frame landmark sequence
+                is sent through WebSocket to the TensorFlow
+                V4 model for prediction.
+            </p>
 
+        </section>
+
+    </div>
+
+
+    <div class="footer-note">
+        ISL V4 Live Subtitle • Real-time sign recognition prototype
     </div>
 
 </div>
 
-</div>
-
-<!-- ========================================================= -->
 
 <!-- MEDIAPIPE -->
-
-<!-- ========================================================= -->
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
 
 <script>
 "use strict";
@@ -268,12 +496,15 @@
 // ============================================================
 
 const SEQUENCE_LENGTH = 30;
+
 const FEATURES = 126;
 
 const CONFIDENCE_THRESHOLD = 0.80;
+
 const STABLE_REQUIRED = 2;
 
 const HAND_UNLOCK_FRAMES = 8;
+
 const MAX_WORDS = 12;
 
 
@@ -299,6 +530,9 @@ const predictionElement =
 const confidenceElement =
     document.getElementById("confidence");
 
+const confidenceFill =
+    document.getElementById("confidenceFill");
+
 const sentenceElement =
     document.getElementById("sentence");
 
@@ -323,10 +557,13 @@ const undoButton =
 // ============================================================
 
 let stream = null;
+
 let websocket = null;
+
 let hands = null;
 
 let running = false;
+
 let paused = false;
 
 let sequence = [];
@@ -334,6 +571,7 @@ let sequence = [];
 let subtitleWords = [];
 
 let candidateLabel = null;
+
 let candidateCount = 0;
 
 let lastAcceptedLabel = null;
@@ -345,7 +583,7 @@ let sentenceCompleted = false;
 let predictionBusy = false;
 
 
-// Reusable canvas for the mirrored MediaPipe input.
+// Reusable mirrored canvas for MediaPipe.
 const processingCanvas =
     document.createElement("canvas");
 
@@ -358,38 +596,83 @@ const processingCtx =
 // ============================================================
 
 function setStatus(text) {
-    statusElement.textContent = text;
+
+    statusElement.textContent =
+        text;
+
 }
 
 
 // ============================================================
-// CLEAN WORDS
+// CONFIDENCE UI
+// ============================================================
+
+function updateConfidence(
+    confidence
+) {
+
+    const safe =
+        Math.max(
+            0,
+            Math.min(
+                1,
+                Number(confidence) || 0
+            )
+        );
+
+
+    const percent =
+        safe * 100;
+
+
+    confidenceElement.textContent =
+        percent.toFixed(1) + "%";
+
+
+    confidenceFill.style.width =
+        percent.toFixed(1) + "%";
+
+}
+
+
+// ============================================================
+// WORD CLEANING
 // ============================================================
 
 function cleanWords(words) {
 
     const output = [];
 
-    for (const word of words) {
+
+    for (
+        const word of words
+    ) {
 
         const value =
             String(word || "")
                 .trim()
                 .toUpperCase();
 
+
         if (!value) {
             continue;
         }
 
+
         if (
             output.length > 0 &&
-            output[output.length - 1] === value
+            output[
+                output.length - 1
+            ] === value
         ) {
+
             continue;
         }
 
+
         output.push(value);
     }
+
 
     return output;
 }
@@ -404,9 +687,11 @@ function buildSentence(words) {
     const clean =
         cleanWords(words);
 
+
     if (!clean.length) {
         return "";
     }
+
 
     const set =
         new Set(clean);
@@ -416,6 +701,7 @@ function buildSentence(words) {
         set.has("YOU") &&
         set.has("WATER")
     ) {
+
         return "You want water?";
     }
 
@@ -424,6 +710,7 @@ function buildSentence(words) {
         set.has("YOU") &&
         set.has("FOOD")
     ) {
+
         return "You want food?";
     }
 
@@ -432,6 +719,7 @@ function buildSentence(words) {
         set.has("YOU") &&
         set.has("HELP")
     ) {
+
         return "Do you need help?";
     }
 
@@ -440,6 +728,7 @@ function buildSentence(words) {
         set.has("YOU") &&
         set.has("WHERE")
     ) {
+
         return "Where are you?";
     }
 
@@ -448,6 +737,7 @@ function buildSentence(words) {
         set.has("YOU") &&
         set.has("WHO")
     ) {
+
         return "Who are you?";
     }
 
@@ -456,6 +746,7 @@ function buildSentence(words) {
         set.has("YOU") &&
         set.has("WHAT")
     ) {
+
         return "What do you want?";
     }
 
@@ -464,6 +755,7 @@ function buildSentence(words) {
         set.has("YOU") &&
         set.has("GOOD")
     ) {
+
         return "Are you good?";
     }
 
@@ -472,13 +764,17 @@ function buildSentence(words) {
         set.has("YOU") &&
         set.has("BAD")
     ) {
+
         return "Are you bad?";
     }
 
 
-    if (clean.length === 1) {
+    if (
+        clean.length === 1
+    ) {
 
         const oneWord = {
+
             GOOD: "Good.",
             BAD: "Bad.",
             HELP: "Help.",
@@ -489,11 +785,21 @@ function buildSentence(words) {
             WHERE: "Where?",
             WHO: "Who?",
             YOU: "You."
+
         };
 
-        if (oneWord[clean[0]]) {
-            return oneWord[clean[0]];
+
+        if (
+            oneWord[
+                clean[0]
+            ]
+        ) {
+
+            return oneWord[
+                clean[0]
+            ];
         }
+
 
         return (
             clean[0].charAt(0) +
@@ -503,17 +809,26 @@ function buildSentence(words) {
     }
 
 
-    if (set.has("WHAT")) {
+    if (
+        set.has("WHAT")
+    ) {
+
         return "What do you want?";
     }
 
 
-    if (set.has("WHERE")) {
+    if (
+        set.has("WHERE")
+    ) {
+
         return "Where are you?";
     }
 
 
-    if (set.has("WHO")) {
+    if (
+        set.has("WHO")
+    ) {
+
         return "Who are you?";
     }
 
@@ -542,24 +857,29 @@ function updateUI() {
             subtitleWords
         );
 
+
     sentenceElement.textContent =
         sentence || "...";
+
 
     wordsElement.textContent =
         subtitleWords.length
             ? subtitleWords.join(" ")
             : "...";
 
+
     clearButton.disabled =
         subtitleWords.length === 0;
 
+
     undoButton.disabled =
         subtitleWords.length === 0;
+
 }
 
 
 // ============================================================
-// WEBSOCKET CONNECT
+// WEBSOCKET
 // ============================================================
 
 function connectWebSocket() {
@@ -568,7 +888,8 @@ function connectWebSocket() {
         (resolve, reject) => {
 
             const protocol =
-                window.location.protocol === "https:"
+                window.location.protocol ===
+                "https:"
                     ? "wss:"
                     : "ws:";
 
@@ -581,43 +902,53 @@ function connectWebSocket() {
 
 
             websocket =
-                new WebSocket(url);
-
-
-            websocket.onopen = () => {
-
-                console.log(
-                    "WebSocket connected."
+                new WebSocket(
+                    url
                 );
 
-                resolve();
-            };
+
+            websocket.onopen =
+                () => {
+
+                    console.log(
+                        "WebSocket connected."
+                    );
 
 
-            websocket.onerror = () => {
+                    resolve();
 
-                reject(
-                    new Error(
-                        "WebSocket connection failed."
-                    )
-                );
-            };
+                };
 
 
-            websocket.onclose = () => {
+            websocket.onerror =
+                () => {
 
-                console.log(
-                    "WebSocket closed."
-                );
-            };
+                    reject(
+                        new Error(
+                            "WebSocket connection failed."
+                        )
+                    );
+
+                };
+
+
+            websocket.onclose =
+                () => {
+
+                    console.log(
+                        "WebSocket closed."
+                    );
+
+                };
 
         }
     );
+
 }
 
 
 // ============================================================
-// PREDICTION
+// PREDICTION REQUEST
 // ============================================================
 
 function predictSequence(
@@ -629,7 +960,8 @@ function predictSequence(
 
             if (
                 !websocket ||
-                websocket.readyState !== WebSocket.OPEN
+                websocket.readyState !==
+                WebSocket.OPEN
             ) {
 
                 reject(
@@ -637,6 +969,7 @@ function predictSequence(
                         "WebSocket not connected."
                     )
                 );
+
 
                 return;
             }
@@ -654,7 +987,8 @@ function predictSequence(
 
 
                         if (
-                            data.type === "prediction"
+                            data.type ===
+                            "prediction"
                         ) {
 
                             websocket.removeEventListener(
@@ -662,22 +996,26 @@ function predictSequence(
                                 handler
                             );
 
+
                             resolve(
                                 data.results || []
                             );
+
 
                             return;
                         }
 
 
                         if (
-                            data.type === "error"
+                            data.type ===
+                            "error"
                         ) {
 
                             websocket.removeEventListener(
                                 "message",
                                 handler
                             );
+
 
                             reject(
                                 new Error(
@@ -687,12 +1025,16 @@ function predictSequence(
                             );
                         }
 
-                    } catch (error) {
+
+                    } catch (
+                        error
+                    ) {
 
                         websocket.removeEventListener(
                             "message",
                             handler
                         );
+
 
                         reject(error);
                     }
@@ -708,13 +1050,17 @@ function predictSequence(
 
             websocket.send(
                 JSON.stringify({
-                    type: "predict",
-                    sequence: sequenceData
+                    type:
+                        "predict",
+
+                    sequence:
+                        sequenceData
                 })
             );
 
         }
     );
+
 }
 
 
@@ -729,10 +1075,12 @@ function acceptPrediction(
 
     if (
         !label ||
-        confidence < CONFIDENCE_THRESHOLD
+        confidence <
+        CONFIDENCE_THRESHOLD
     ) {
 
         candidateLabel = null;
+
         candidateCount = 0;
 
         return;
@@ -740,7 +1088,8 @@ function acceptPrediction(
 
 
     if (
-        label === candidateLabel
+        label ===
+        candidateLabel
     ) {
 
         candidateCount++;
@@ -748,30 +1097,38 @@ function acceptPrediction(
     } else {
 
         candidateLabel = label;
+
         candidateCount = 1;
     }
 
 
     if (
-        candidateCount < STABLE_REQUIRED
+        candidateCount <
+        STABLE_REQUIRED
     ) {
 
         return;
     }
 
 
+    // Same sign remains locked until hand release.
     if (
-        label === lastAcceptedLabel
+        label ===
+        lastAcceptedLabel
     ) {
 
         candidateLabel = null;
+
         candidateCount = 0;
 
         return;
     }
 
 
-    if (sentenceCompleted) {
+    // Start a fresh sentence after a completed question.
+    if (
+        sentenceCompleted
+    ) {
 
         subtitleWords = [];
 
@@ -781,18 +1138,38 @@ function acceptPrediction(
     }
 
 
-    subtitleWords.push(label);
+    // Extra duplicate protection.
+    if (
+        subtitleWords.length > 0 &&
+        subtitleWords[
+            subtitleWords.length - 1
+        ] === label
+    ) {
+
+        candidateLabel = null;
+
+        candidateCount = 0;
+
+        return;
+    }
+
+
+    subtitleWords.push(
+        label
+    );
 
 
     if (
-        subtitleWords.length > MAX_WORDS
+        subtitleWords.length >
+        MAX_WORDS
     ) {
 
         subtitleWords.shift();
     }
 
 
-    lastAcceptedLabel = label;
+    lastAcceptedLabel =
+        label;
 
 
     const sentence =
@@ -810,7 +1187,9 @@ function acceptPrediction(
 
 
     candidateLabel = null;
+
     candidateCount = 0;
+
 }
 
 
@@ -818,10 +1197,13 @@ function acceptPrediction(
 // MEDIAPIPE RESULTS
 // ============================================================
 
-async function handleResults(results) {
+async function handleResults(
+    results
+) {
 
     canvas.width =
         video.videoWidth || 640;
+
 
     canvas.height =
         video.videoHeight || 480;
@@ -849,6 +1231,7 @@ async function handleResults(results) {
         sequence = [];
 
         candidateLabel = null;
+
         candidateCount = 0;
 
 
@@ -857,7 +1240,8 @@ async function handleResults(results) {
             HAND_UNLOCK_FRAMES
         ) {
 
-            lastAcceptedLabel = null;
+            lastAcceptedLabel =
+                null;
         }
 
 
@@ -887,7 +1271,9 @@ async function handleResults(results) {
                 landmarks,
                 HAND_CONNECTIONS,
                 {
-                    color: "#00ff88",
+                    color:
+                        "#63e6be",
+
                     lineWidth: 2
                 }
             );
@@ -903,19 +1289,19 @@ async function handleResults(results) {
                 ctx,
                 landmarks,
                 {
-                    color: "#ffffff",
+                    color:
+                        "#ffffff",
+
                     lineWidth: 1
                 }
             );
         }
+
     }
 
 
     // --------------------------------------------------------
     // ORDER HANDS
-    //
-    // MediaPipe receives the mirrored processing frame,
-    // matching the desktop/selfie-style pipeline.
     // --------------------------------------------------------
 
     const ordered = {
@@ -930,7 +1316,8 @@ async function handleResults(results) {
 
         for (
             let i = 0;
-            i < results.multiHandedness.length;
+            i <
+            results.multiHandedness.length;
             i++
         ) {
 
@@ -940,35 +1327,48 @@ async function handleResults(results) {
                     .label;
 
 
-            if (label === "Left") {
+            if (
+                label === "Left"
+            ) {
 
                 ordered.Left =
-                    results.multiHandLandmarks[i];
+                    results
+                        .multiHandLandmarks[i];
             }
 
 
-            if (label === "Right") {
+            if (
+                label === "Right"
+            ) {
 
                 ordered.Right =
-                    results.multiHandLandmarks[i];
+                    results
+                        .multiHandLandmarks[i];
             }
+
         }
+
     }
 
 
     // --------------------------------------------------------
-    // 126-D VECTOR
+    // BUILD 126-D VECTOR
     // --------------------------------------------------------
 
     const vector =
-        new Array(FEATURES).fill(0);
+        new Array(
+            FEATURES
+        ).fill(0);
 
 
-    // LEFT = 0:63
-    if (ordered.Left) {
+    // Left hand: indices 0-62
+    if (
+        ordered.Left
+    ) {
 
         const wrist =
             ordered.Left[0];
+
 
         let offset = 0;
 
@@ -979,22 +1379,30 @@ async function handleResults(results) {
         ) {
 
             vector[offset++] =
-                landmark.x - wrist.x;
+                landmark.x -
+                wrist.x;
+
 
             vector[offset++] =
-                landmark.y - wrist.y;
+                landmark.y -
+                wrist.y;
+
 
             vector[offset++] =
-                landmark.z - wrist.z;
+                landmark.z -
+                wrist.z;
         }
     }
 
 
-    // RIGHT = 63:126
-    if (ordered.Right) {
+    // Right hand: indices 63-125
+    if (
+        ordered.Right
+    ) {
 
         const wrist =
             ordered.Right[0];
+
 
         let offset = 63;
 
@@ -1005,22 +1413,30 @@ async function handleResults(results) {
         ) {
 
             vector[offset++] =
-                landmark.x - wrist.x;
+                landmark.x -
+                wrist.x;
+
 
             vector[offset++] =
-                landmark.y - wrist.y;
+                landmark.y -
+                wrist.y;
+
 
             vector[offset++] =
-                landmark.z - wrist.z;
+                landmark.z -
+                wrist.z;
         }
     }
 
 
-    sequence.push(vector);
+    sequence.push(
+        vector
+    );
 
 
     if (
-        sequence.length > SEQUENCE_LENGTH
+        sequence.length >
+        SEQUENCE_LENGTH
     ) {
 
         sequence =
@@ -1035,7 +1451,8 @@ async function handleResults(results) {
     // --------------------------------------------------------
 
     if (
-        sequence.length === SEQUENCE_LENGTH &&
+        sequence.length ===
+        SEQUENCE_LENGTH &&
         !predictionBusy &&
         !paused
     ) {
@@ -1071,11 +1488,9 @@ async function handleResults(results) {
                     best.label;
 
 
-                confidenceElement.textContent =
-                    (
-                        best.confidence * 100
-                    ).toFixed(1) +
-                    "%";
+                updateConfidence(
+                    best.confidence
+                );
 
 
                 acceptPrediction(
@@ -1085,7 +1500,9 @@ async function handleResults(results) {
             }
 
 
-        } catch (error) {
+        } catch (
+            error
+        ) {
 
             console.error(
                 "Prediction error:",
@@ -1103,12 +1520,14 @@ async function handleResults(results) {
 
             predictionBusy = false;
         }
+
     }
+
 }
 
 
 // ============================================================
-// MEDIAPIPE INITIALIZATION
+// MEDIAPIPE INIT
 // ============================================================
 
 function initializeHands() {
@@ -1116,13 +1535,14 @@ function initializeHands() {
     hands =
         new Hands({
 
-            locateFile: file => {
+            locateFile:
+                file => {
 
-                return (
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" +
-                    file
-                );
-            }
+                    return (
+                        "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" +
+                        file
+                    );
+                }
         });
 
 
@@ -1132,24 +1552,26 @@ function initializeHands() {
 
         modelComplexity: 1,
 
-        minDetectionConfidence: 0.60,
+        minDetectionConfidence:
+            0.60,
 
-        minTrackingConfidence: 0.60
+        minTrackingConfidence:
+            0.60
     });
 
 
     hands.onResults(
         handleResults
     );
+
 }
 
 
 // ============================================================
 // CAMERA LOOP
 //
-// IMPORTANT:
-// The browser preview is mirrored with CSS.
-// The image sent to MediaPipe is also mirrored.
+// The preview is mirrored using CSS.
+// The frame sent to MediaPipe is also mirrored.
 // ============================================================
 
 async function cameraLoop() {
@@ -1170,11 +1592,11 @@ async function cameraLoop() {
             processingCanvas.width =
                 video.videoWidth || 640;
 
+
             processingCanvas.height =
                 video.videoHeight || 480;
 
 
-            // Clear reusable canvas.
             processingCtx.clearRect(
                 0,
                 0,
@@ -1183,7 +1605,6 @@ async function cameraLoop() {
             );
 
 
-            // Mirror image horizontally.
             processingCtx.save();
 
 
@@ -1211,7 +1632,6 @@ async function cameraLoop() {
             processingCtx.restore();
 
 
-            // Send mirrored frame to MediaPipe.
             await hands.send({
                 image:
                     processingCanvas
@@ -1224,7 +1644,9 @@ async function cameraLoop() {
                 "MediaPipe error:",
                 error
             );
+
         }
+
     }
 
 
@@ -1252,10 +1674,6 @@ async function startCamera() {
         );
 
 
-        // ----------------------------------------------------
-        // CAMERA
-        // ----------------------------------------------------
-
         stream =
             await navigator
                 .mediaDevices
@@ -1271,7 +1689,8 @@ async function startCamera() {
                             ideal: 720
                         },
 
-                        facingMode: "user"
+                        facingMode:
+                            "user"
                     },
 
                     audio: false
@@ -1295,22 +1714,15 @@ async function startCamera() {
         );
 
 
-        // ----------------------------------------------------
-        // WEBSOCKET
-        // ----------------------------------------------------
-
         if (
             !websocket ||
-            websocket.readyState !== WebSocket.OPEN
+            websocket.readyState !==
+            WebSocket.OPEN
         ) {
 
             await connectWebSocket();
         }
 
-
-        // ----------------------------------------------------
-        // MEDIAPIPE
-        // ----------------------------------------------------
 
         initializeHands();
 
@@ -1333,7 +1745,9 @@ async function startCamera() {
         );
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "START CAMERA ERROR:",
@@ -1347,19 +1761,15 @@ async function startCamera() {
             " - " +
             error.message
         );
+
     }
+
 }
 
 
 // ============================================================
-// BUTTONS
+// PAUSE / RESUME
 // ============================================================
-
-startButton.addEventListener(
-    "click",
-    startCamera
-);
-
 
 pauseButton.addEventListener(
     "click",
@@ -1378,6 +1788,7 @@ pauseButton.addEventListener(
         sequence = [];
 
         candidateLabel = null;
+
         candidateCount = 0;
 
 
@@ -1386,9 +1797,14 @@ pauseButton.addEventListener(
                 ? "Paused."
                 : "Camera + server connected."
         );
+
     }
 );
 
+
+// ============================================================
+// CLEAR
+// ============================================================
 
 clearButton.addEventListener(
     "click",
@@ -1406,11 +1822,20 @@ clearButton.addEventListener(
 
         sentenceCompleted = false;
 
+        predictionElement.textContent =
+            "Waiting...";
+
+        updateConfidence(0);
 
         updateUI();
+
     }
 );
 
+
+// ============================================================
+// UNDO
+// ============================================================
 
 undoButton.addEventListener(
     "click",
@@ -1447,21 +1872,32 @@ undoButton.addEventListener(
 
 
         updateUI();
+
     }
 );
 
 
 // ============================================================
-// INITIALIZATION
+// START BUTTON
+// ============================================================
+
+startButton.addEventListener(
+    "click",
+    startCamera
+);
+
+
+// ============================================================
+// INITIAL UI
 // ============================================================
 
 updateUI();
 
+updateConfidence(0);
 
 setStatus(
     "Ready. Click Start Camera."
 );
-
 
 console.log(
     "ISL V4 frontend loaded."
