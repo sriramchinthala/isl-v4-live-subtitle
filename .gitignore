@@ -1,0 +1,14 @@
+.venv/
+mediapipe_env/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.git/
+landmark_data_v2/
+landmark_data_v3/
+landmark_data_v4/
+*.keras.bak
+*_backup.py
+*_backup_*.py
+web/index_backup*.html

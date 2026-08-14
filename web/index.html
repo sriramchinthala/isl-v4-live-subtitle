@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISL V4 Live Subtitle</title>
+
+```
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background: #111;
+        color: #fff;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .app {
+        width: 95%;
+        max-width: 1200px;
+        margin: 24px auto;
+    }
+
+    h1 {
+        text-align: center;
+        margin: 0 0 8px;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #aaa;
+        margin-bottom: 24px;
+    }
+
+    .layout {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 18px;
+    }
+
+    .card {
+        background: #1d1d1d;
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .camera {
+        position: relative;
+        background: #000;
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        border-radius: 10px;
+    }
+
+    #video,
+    #canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    #video {
+        transform: scaleX(-1);
+    }
+
+    .status {
+        padding: 10px;
+        margin-top: 10px;
+        background: #2a2a2a;
+        border-radius: 8px;
+        min-height: 40px;
+    }
+
+    button {
+        margin: 10px 6px 0 0;
+        padding: 10px 15px;
+        border: 0;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .label {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        color: #aaa;
+        font-size: 13px;
+    }
+
+    .prediction {
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .confidence {
+        font-size: 17px;
+    }
+
+    .sentence {
+        font-size: 30px;
+        font-weight: bold;
+        background: #101010;
+        padding: 20px;
+        border-radius: 10px;
+        min-height: 120px;
+        margin-top: 8px;
+    }
+
+    .words {
+        color: #bbb;
+        margin-top: 12px;
+        min-height: 45px;
+    }
+
+    @media (max-width: 800px) {
+        .layout {
+            grid-template-columns: 1fr;
+        }
+
+        .sentence {
+            font-size: 24px;
+        }
+    }
+</style>
+```
+
+</head>
+
+<body>
+
+<div class="app">
+
+```
+<h1>ISL V4 Live Subtitle</h1>
+
+<div class="subtitle">
+    Indian Sign Language → Live English Subtitle
+</div>
+
+<div class="layout">
+
+    <!-- ================================================= -->
+    <!-- CAMERA -->
+    <!-- ================================================= -->
+
+    <div class="card">
+
+        <div class="camera">
+
+            <video
+                id="video"
+                autoplay
+                playsinline
+                muted>
+            </video>
+
+            <canvas id="canvas"></canvas>
+
+        </div>
+
+        <div
+            id="status"
+            class="status">
+            Ready. Click Start Camera.
+        </div>
+
+        <button id="startButton">
+            Start Camera
+        </button>
+
+        <button
+            id="pauseButton"
+            disabled>
+            Pause
+        </button>
+
+        <button
+            id="clearButton"
+            disabled>
+            Clear
+        </button>
+
+        <button
+            id="undoButton"
+            disabled>
+            Undo
+        </button>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- RESULTS -->
+    <!-- ================================================= -->
+
+    <div class="card">
+
+        <div class="label">
+            AI PREDICTION
+        </div>
+
+        <div
+            id="prediction"
+            class="prediction">
+            Waiting...
+        </div>
+
+        <div class="label">
+            CONFIDENCE
+        </div>
+
+        <div
+            id="confidence"
+            class="confidence">
+            0%
+        </div>
+
+        <div class="label">
+            SENTENCE
+        </div>
+
+        <div
+            id="sentence"
+            class="sentence">
+            ...
+        </div>
+
+        <div class="label">
+            RECOGNIZED WORDS
+        </div>
+
+        <div
+            id="words"
+            class="words">
+            ...
+        </div>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+<!-- ========================================================= -->
+
+<!-- MEDIAPIPE -->
+
+<!-- ========================================================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+<script>
+"use strict";
+
+
+// ============================================================
+// SETTINGS
+// ============================================================
+
+const SEQUENCE_LENGTH = 30;
+const FEATURES = 126;
+
+const CONFIDENCE_THRESHOLD = 0.80;
+const STABLE_REQUIRED = 2;
+
+const HAND_UNLOCK_FRAMES = 8;
+const MAX_WORDS = 12;
+
+
+// ============================================================
+// ELEMENTS
+// ============================================================
+
+const video =
+    document.getElementById("video");
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const statusElement =
+    document.getElementById("status");
+
+const predictionElement =
+    document.getElementById("prediction");
+
+const confidenceElement =
+    document.getElementById("confidence");
+
+const sentenceElement =
+    document.getElementById("sentence");
+
+const wordsElement =
+    document.getElementById("words");
+
+const startButton =
+    document.getElementById("startButton");
+
+const pauseButton =
+    document.getElementById("pauseButton");
+
+const clearButton =
+    document.getElementById("clearButton");
+
+const undoButton =
+    document.getElementById("undoButton");
+
+
+// ============================================================
+// STATE
+// ============================================================
+
+let stream = null;
+let websocket = null;
+let hands = null;
+
+let running = false;
+let paused = false;
+
+let sequence = [];
+
+let subtitleWords = [];
+
+let candidateLabel = null;
+let candidateCount = 0;
+
+let lastAcceptedLabel = null;
+
+let handAbsentCount = 0;
+
+let sentenceCompleted = false;
+
+let predictionBusy = false;
+
+
+// Reusable canvas for the mirrored MediaPipe input.
+const processingCanvas =
+    document.createElement("canvas");
+
+const processingCtx =
+    processingCanvas.getContext("2d");
+
+
+// ============================================================
+// STATUS
+// ============================================================
+
+function setStatus(text) {
+    statusElement.textContent = text;
+}
+
+
+// ============================================================
+// CLEAN WORDS
+// ============================================================
+
+function cleanWords(words) {
+
+    const output = [];
+
+    for (const word of words) {
+
+        const value =
+            String(word || "")
+                .trim()
+                .toUpperCase();
+
+        if (!value) {
+            continue;
+        }
+
+        if (
+            output.length > 0 &&
+            output[output.length - 1] === value
+        ) {
+            continue;
+        }
+
+        output.push(value);
+    }
+
+    return output;
+}
+
+
+// ============================================================
+// SENTENCE BUILDER
+// ============================================================
+
+function buildSentence(words) {
+
+    const clean =
+        cleanWords(words);
+
+    if (!clean.length) {
+        return "";
+    }
+
+    const set =
+        new Set(clean);
+
+
+    if (
+        set.has("YOU") &&
+        set.has("WATER")
+    ) {
+        return "You want water?";
+    }
+
+
+    if (
+        set.has("YOU") &&
+        set.has("FOOD")
+    ) {
+        return "You want food?";
+    }
+
+
+    if (
+        set.has("YOU") &&
+        set.has("HELP")
+    ) {
+        return "Do you need help?";
+    }
+
+
+    if (
+        set.has("YOU") &&
+        set.has("WHERE")
+    ) {
+        return "Where are you?";
+    }
+
+
+    if (
+        set.has("YOU") &&
+        set.has("WHO")
+    ) {
+        return "Who are you?";
+    }
+
+
+    if (
+        set.has("YOU") &&
+        set.has("WHAT")
+    ) {
+        return "What do you want?";
+    }
+
+
+    if (
+        set.has("YOU") &&
+        set.has("GOOD")
+    ) {
+        return "Are you good?";
+    }
+
+
+    if (
+        set.has("YOU") &&
+        set.has("BAD")
+    ) {
+        return "Are you bad?";
+    }
+
+
+    if (clean.length === 1) {
+
+        const oneWord = {
+            GOOD: "Good.",
+            BAD: "Bad.",
+            HELP: "Help.",
+            WATER: "Water.",
+            FOOD: "Food.",
+            WELCOME: "Welcome.",
+            WHAT: "What?",
+            WHERE: "Where?",
+            WHO: "Who?",
+            YOU: "You."
+        };
+
+        if (oneWord[clean[0]]) {
+            return oneWord[clean[0]];
+        }
+
+        return (
+            clean[0].charAt(0) +
+            clean[0].slice(1).toLowerCase() +
+            "."
+        );
+    }
+
+
+    if (set.has("WHAT")) {
+        return "What do you want?";
+    }
+
+
+    if (set.has("WHERE")) {
+        return "Where are you?";
+    }
+
+
+    if (set.has("WHO")) {
+        return "Who are you?";
+    }
+
+
+    return (
+        clean
+            .map(
+                word =>
+                    word.charAt(0) +
+                    word.slice(1).toLowerCase()
+            )
+            .join(" ")
+        + "."
+    );
+}
+
+
+// ============================================================
+// UPDATE UI
+// ============================================================
+
+function updateUI() {
+
+    const sentence =
+        buildSentence(
+            subtitleWords
+        );
+
+    sentenceElement.textContent =
+        sentence || "...";
+
+    wordsElement.textContent =
+        subtitleWords.length
+            ? subtitleWords.join(" ")
+            : "...";
+
+    clearButton.disabled =
+        subtitleWords.length === 0;
+
+    undoButton.disabled =
+        subtitleWords.length === 0;
+}
+
+
+// ============================================================
+// WEBSOCKET CONNECT
+// ============================================================
+
+function connectWebSocket() {
+
+    return new Promise(
+        (resolve, reject) => {
+
+            const protocol =
+                window.location.protocol === "https:"
+                    ? "wss:"
+                    : "ws:";
+
+
+            const url =
+                protocol +
+                "//" +
+                window.location.host +
+                "/ws";
+
+
+            websocket =
+                new WebSocket(url);
+
+
+            websocket.onopen = () => {
+
+                console.log(
+                    "WebSocket connected."
+                );
+
+                resolve();
+            };
+
+
+            websocket.onerror = () => {
+
+                reject(
+                    new Error(
+                        "WebSocket connection failed."
+                    )
+                );
+            };
+
+
+            websocket.onclose = () => {
+
+                console.log(
+                    "WebSocket closed."
+                );
+            };
+
+        }
+    );
+}
+
+
+// ============================================================
+// PREDICTION
+// ============================================================
+
+function predictSequence(
+    sequenceData
+) {
+
+    return new Promise(
+        (resolve, reject) => {
+
+            if (
+                !websocket ||
+                websocket.readyState !== WebSocket.OPEN
+            ) {
+
+                reject(
+                    new Error(
+                        "WebSocket not connected."
+                    )
+                );
+
+                return;
+            }
+
+
+            const handler =
+                event => {
+
+                    try {
+
+                        const data =
+                            JSON.parse(
+                                event.data
+                            );
+
+
+                        if (
+                            data.type === "prediction"
+                        ) {
+
+                            websocket.removeEventListener(
+                                "message",
+                                handler
+                            );
+
+                            resolve(
+                                data.results || []
+                            );
+
+                            return;
+                        }
+
+
+                        if (
+                            data.type === "error"
+                        ) {
+
+                            websocket.removeEventListener(
+                                "message",
+                                handler
+                            );
+
+                            reject(
+                                new Error(
+                                    data.message ||
+                                    "Prediction error."
+                                )
+                            );
+                        }
+
+                    } catch (error) {
+
+                        websocket.removeEventListener(
+                            "message",
+                            handler
+                        );
+
+                        reject(error);
+                    }
+
+                };
+
+
+            websocket.addEventListener(
+                "message",
+                handler
+            );
+
+
+            websocket.send(
+                JSON.stringify({
+                    type: "predict",
+                    sequence: sequenceData
+                })
+            );
+
+        }
+    );
+}
+
+
+// ============================================================
+// ACCEPT PREDICTION
+// ============================================================
+
+function acceptPrediction(
+    label,
+    confidence
+) {
+
+    if (
+        !label ||
+        confidence < CONFIDENCE_THRESHOLD
+    ) {
+
+        candidateLabel = null;
+        candidateCount = 0;
+
+        return;
+    }
+
+
+    if (
+        label === candidateLabel
+    ) {
+
+        candidateCount++;
+
+    } else {
+
+        candidateLabel = label;
+        candidateCount = 1;
+    }
+
+
+    if (
+        candidateCount < STABLE_REQUIRED
+    ) {
+
+        return;
+    }
+
+
+    if (
+        label === lastAcceptedLabel
+    ) {
+
+        candidateLabel = null;
+        candidateCount = 0;
+
+        return;
+    }
+
+
+    if (sentenceCompleted) {
+
+        subtitleWords = [];
+
+        sentenceCompleted = false;
+
+        lastAcceptedLabel = null;
+    }
+
+
+    subtitleWords.push(label);
+
+
+    if (
+        subtitleWords.length > MAX_WORDS
+    ) {
+
+        subtitleWords.shift();
+    }
+
+
+    lastAcceptedLabel = label;
+
+
+    const sentence =
+        buildSentence(
+            subtitleWords
+        );
+
+
+    sentenceCompleted =
+        subtitleWords.length >= 2 &&
+        sentence.endsWith("?");
+
+
+    updateUI();
+
+
+    candidateLabel = null;
+    candidateCount = 0;
+}
+
+
+// ============================================================
+// MEDIAPIPE RESULTS
+// ============================================================
+
+async function handleResults(results) {
+
+    canvas.width =
+        video.videoWidth || 640;
+
+    canvas.height =
+        video.videoHeight || 480;
+
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    // --------------------------------------------------------
+    // NO HAND
+    // --------------------------------------------------------
+
+    if (
+        !results.multiHandLandmarks ||
+        results.multiHandLandmarks.length === 0
+    ) {
+
+        handAbsentCount++;
+
+        sequence = [];
+
+        candidateLabel = null;
+        candidateCount = 0;
+
+
+        if (
+            handAbsentCount >=
+            HAND_UNLOCK_FRAMES
+        ) {
+
+            lastAcceptedLabel = null;
+        }
+
+
+        return;
+    }
+
+
+    handAbsentCount = 0;
+
+
+    // --------------------------------------------------------
+    // DRAW LANDMARKS
+    // --------------------------------------------------------
+
+    for (
+        const landmarks
+        of results.multiHandLandmarks
+    ) {
+
+        if (
+            typeof drawConnectors ===
+            "function"
+        ) {
+
+            drawConnectors(
+                ctx,
+                landmarks,
+                HAND_CONNECTIONS,
+                {
+                    color: "#00ff88",
+                    lineWidth: 2
+                }
+            );
+        }
+
+
+        if (
+            typeof drawLandmarks ===
+            "function"
+        ) {
+
+            drawLandmarks(
+                ctx,
+                landmarks,
+                {
+                    color: "#ffffff",
+                    lineWidth: 1
+                }
+            );
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // ORDER HANDS
+    //
+    // MediaPipe receives the mirrored processing frame,
+    // matching the desktop/selfie-style pipeline.
+    // --------------------------------------------------------
+
+    const ordered = {
+        Left: null,
+        Right: null
+    };
+
+
+    if (
+        results.multiHandedness
+    ) {
+
+        for (
+            let i = 0;
+            i < results.multiHandedness.length;
+            i++
+        ) {
+
+            const label =
+                results
+                    .multiHandedness[i]
+                    .label;
+
+
+            if (label === "Left") {
+
+                ordered.Left =
+                    results.multiHandLandmarks[i];
+            }
+
+
+            if (label === "Right") {
+
+                ordered.Right =
+                    results.multiHandLandmarks[i];
+            }
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // 126-D VECTOR
+    // --------------------------------------------------------
+
+    const vector =
+        new Array(FEATURES).fill(0);
+
+
+    // LEFT = 0:63
+    if (ordered.Left) {
+
+        const wrist =
+            ordered.Left[0];
+
+        let offset = 0;
+
+
+        for (
+            const landmark
+            of ordered.Left
+        ) {
+
+            vector[offset++] =
+                landmark.x - wrist.x;
+
+            vector[offset++] =
+                landmark.y - wrist.y;
+
+            vector[offset++] =
+                landmark.z - wrist.z;
+        }
+    }
+
+
+    // RIGHT = 63:126
+    if (ordered.Right) {
+
+        const wrist =
+            ordered.Right[0];
+
+        let offset = 63;
+
+
+        for (
+            const landmark
+            of ordered.Right
+        ) {
+
+            vector[offset++] =
+                landmark.x - wrist.x;
+
+            vector[offset++] =
+                landmark.y - wrist.y;
+
+            vector[offset++] =
+                landmark.z - wrist.z;
+        }
+    }
+
+
+    sequence.push(vector);
+
+
+    if (
+        sequence.length > SEQUENCE_LENGTH
+    ) {
+
+        sequence =
+            sequence.slice(
+                -SEQUENCE_LENGTH
+            );
+    }
+
+
+    // --------------------------------------------------------
+    // PREDICT
+    // --------------------------------------------------------
+
+    if (
+        sequence.length === SEQUENCE_LENGTH &&
+        !predictionBusy &&
+        !paused
+    ) {
+
+        predictionBusy = true;
+
+
+        const currentSequence =
+            sequence.slice();
+
+
+        sequence = [];
+
+
+        try {
+
+            const results =
+                await predictSequence(
+                    currentSequence
+                );
+
+
+            if (
+                results &&
+                results.length > 0
+            ) {
+
+                const best =
+                    results[0];
+
+
+                predictionElement.textContent =
+                    best.label;
+
+
+                confidenceElement.textContent =
+                    (
+                        best.confidence * 100
+                    ).toFixed(1) +
+                    "%";
+
+
+                acceptPrediction(
+                    best.label,
+                    best.confidence
+                );
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Prediction error:",
+                error
+            );
+
+
+            setStatus(
+                "Prediction error: " +
+                error.message
+            );
+
+
+        } finally {
+
+            predictionBusy = false;
+        }
+    }
+}
+
+
+// ============================================================
+// MEDIAPIPE INITIALIZATION
+// ============================================================
+
+function initializeHands() {
+
+    hands =
+        new Hands({
+
+            locateFile: file => {
+
+                return (
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" +
+                    file
+                );
+            }
+        });
+
+
+    hands.setOptions({
+
+        maxNumHands: 2,
+
+        modelComplexity: 1,
+
+        minDetectionConfidence: 0.60,
+
+        minTrackingConfidence: 0.60
+    });
+
+
+    hands.onResults(
+        handleResults
+    );
+}
+
+
+// ============================================================
+// CAMERA LOOP
+//
+// IMPORTANT:
+// The browser preview is mirrored with CSS.
+// The image sent to MediaPipe is also mirrored.
+// ============================================================
+
+async function cameraLoop() {
+
+    if (!running) {
+        return;
+    }
+
+
+    if (
+        !paused &&
+        hands &&
+        video.readyState >= 2
+    ) {
+
+        try {
+
+            processingCanvas.width =
+                video.videoWidth || 640;
+
+            processingCanvas.height =
+                video.videoHeight || 480;
+
+
+            // Clear reusable canvas.
+            processingCtx.clearRect(
+                0,
+                0,
+                processingCanvas.width,
+                processingCanvas.height
+            );
+
+
+            // Mirror image horizontally.
+            processingCtx.save();
+
+
+            processingCtx.translate(
+                processingCanvas.width,
+                0
+            );
+
+
+            processingCtx.scale(
+                -1,
+                1
+            );
+
+
+            processingCtx.drawImage(
+                video,
+                0,
+                0,
+                processingCanvas.width,
+                processingCanvas.height
+            );
+
+
+            processingCtx.restore();
+
+
+            // Send mirrored frame to MediaPipe.
+            await hands.send({
+                image:
+                    processingCanvas
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "MediaPipe error:",
+                error
+            );
+        }
+    }
+
+
+    requestAnimationFrame(
+        cameraLoop
+    );
+}
+
+
+// ============================================================
+// START CAMERA
+// ============================================================
+
+async function startCamera() {
+
+    console.log(
+        "Start Camera clicked."
+    );
+
+
+    try {
+
+        setStatus(
+            "Requesting camera..."
+        );
+
+
+        // ----------------------------------------------------
+        // CAMERA
+        // ----------------------------------------------------
+
+        stream =
+            await navigator
+                .mediaDevices
+                .getUserMedia({
+
+                    video: {
+
+                        width: {
+                            ideal: 960
+                        },
+
+                        height: {
+                            ideal: 720
+                        },
+
+                        facingMode: "user"
+                    },
+
+                    audio: false
+                });
+
+
+        video.srcObject =
+            stream;
+
+
+        await video.play();
+
+
+        running = true;
+
+        paused = false;
+
+
+        setStatus(
+            "Camera started. Connecting server..."
+        );
+
+
+        // ----------------------------------------------------
+        // WEBSOCKET
+        // ----------------------------------------------------
+
+        if (
+            !websocket ||
+            websocket.readyState !== WebSocket.OPEN
+        ) {
+
+            await connectWebSocket();
+        }
+
+
+        // ----------------------------------------------------
+        // MEDIAPIPE
+        // ----------------------------------------------------
+
+        initializeHands();
+
+
+        startButton.disabled =
+            true;
+
+
+        pauseButton.disabled =
+            false;
+
+
+        setStatus(
+            "Camera + server connected."
+        );
+
+
+        requestAnimationFrame(
+            cameraLoop
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "START CAMERA ERROR:",
+            error
+        );
+
+
+        setStatus(
+            "Start error: " +
+            error.name +
+            " - " +
+            error.message
+        );
+    }
+}
+
+
+// ============================================================
+// BUTTONS
+// ============================================================
+
+startButton.addEventListener(
+    "click",
+    startCamera
+);
+
+
+pauseButton.addEventListener(
+    "click",
+    () => {
+
+        paused =
+            !paused;
+
+
+        pauseButton.textContent =
+            paused
+                ? "Resume"
+                : "Pause";
+
+
+        sequence = [];
+
+        candidateLabel = null;
+        candidateCount = 0;
+
+
+        setStatus(
+            paused
+                ? "Paused."
+                : "Camera + server connected."
+        );
+    }
+);
+
+
+clearButton.addEventListener(
+    "click",
+    () => {
+
+        subtitleWords = [];
+
+        candidateLabel = null;
+
+        candidateCount = 0;
+
+        lastAcceptedLabel = null;
+
+        handAbsentCount = 0;
+
+        sentenceCompleted = false;
+
+
+        updateUI();
+    }
+);
+
+
+undoButton.addEventListener(
+    "click",
+    () => {
+
+        if (
+            subtitleWords.length === 0
+        ) {
+
+            return;
+        }
+
+
+        subtitleWords.pop();
+
+
+        lastAcceptedLabel =
+            subtitleWords.length
+                ? subtitleWords[
+                    subtitleWords.length - 1
+                ]
+                : null;
+
+
+        const sentence =
+            buildSentence(
+                subtitleWords
+            );
+
+
+        sentenceCompleted =
+            subtitleWords.length >= 2 &&
+            sentence.endsWith("?");
+
+
+        updateUI();
+    }
+);
+
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+
+updateUI();
+
+
+setStatus(
+    "Ready. Click Start Camera."
+);
+
+
+console.log(
+    "ISL V4 frontend loaded."
+);
+
+</script>
+
+</body>
+</html>
