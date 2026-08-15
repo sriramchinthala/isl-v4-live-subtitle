@@ -616,9 +616,82 @@
             .lobby-bar { flex-direction: column; align-items: stretch; }
             .navbar { padding: 14px 20px; }
         }
+
+
+        /* ===== SUBTLE DESKTOP MOUSE EFFECTS ===== */
+        @media (pointer: fine) {
+        
+
+            .video-pod,
+            .lobby-bar,
+            .dock-wrapper {
+                transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            }
+
+            .video-pod:hover {
+                transform: translateY(-3px);
+                border-color: rgba(16, 185, 129, 0.28);
+                box-shadow:
+                    0 20px 50px rgba(0, 0, 0, 0.65),
+                    0 0 24px rgba(16, 185, 129, 0.08);
+            }
+
+            .lobby-bar:hover {
+                border-color: rgba(255, 255, 255, 0.12);
+                box-shadow:
+                    0 16px 38px rgba(0, 0, 0, 0.45),
+                    0 0 28px rgba(16, 185, 129, 0.05);
+            }
+
+            .dock-item:hover {
+                transform: translateY(-3px) scale(1.04);
+            }
+
+            .btn:hover {
+                transform: translateY(-1px);
+            }
+        }
+
+
+
+        /* ===== SMOOTH GPU-FRIENDLY CURSOR GLOW ===== */
+        #cursorGlow {
+            position: fixed;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            background: radial-gradient(
+                circle,
+                rgba(16, 185, 129, 0.13) 0%,
+                rgba(16, 185, 129, 0.06) 28%,
+                rgba(16, 185, 129, 0.02) 48%,
+                transparent 72%
+            );
+            filter: blur(28px);
+            opacity: 0;
+            will-change: transform, opacity;
+            transform: translate3d(-50%, -50%, 0);
+            transition: opacity 0.18s ease;
+        }
+
+        @media (pointer: fine) {
+            #cursorGlow {
+                opacity: 1;
+            }
+        }
+
+        @media (pointer: coarse) {
+            #cursorGlow {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
+
+    <div id="cursorGlow" aria-hidden="true"></div>
 
     <!-- DYNAMIC AMBIENT MESH BACKGROUND -->
     <div class="ambient-aurora">
@@ -917,6 +990,9 @@
 
             initMediaPipeEngine();
             requestAnimationFrame(renderAILoop);
+            if (typeof setGlowEnabled === "function") {
+                setGlowEnabled(false);
+            }
             updateStatus("Live in Room", "live");
         } catch (err) {
             pushToast("Camera Access Denied: " + err.message);
@@ -1206,6 +1282,9 @@
             const track = localStream.getVideoTracks()[0];
             track.enabled = !track.enabled;
             cameraToggle.classList.toggle("active", track.enabled);
+            if (typeof setGlowEnabled === "function") {
+                setGlowEnabled(!track.enabled);
+            }
         }
     });
 
@@ -1244,5 +1323,73 @@
         pushToast("Call ended");
     });
     </script>
+
+
+    
+
+    <script>
+    // Smooth cursor glow. Disabled while camera/AI is active to protect MediaPipe performance.
+    (() => {
+        const glow = document.getElementById("cursorGlow");
+        if (!glow || !window.matchMedia("(pointer: fine)").matches) return;
+
+        let targetX = window.innerWidth / 2;
+        let targetY = window.innerHeight / 2;
+        let currentX = targetX;
+        let currentY = targetY;
+        let rafId = 0;
+        let glowEnabled = true;
+
+        window.setGlowEnabled = (enabled) => {
+            glowEnabled = Boolean(enabled);
+            glow.style.opacity = glowEnabled ? "1" : "0";
+
+            if (!glowEnabled && rafId) {
+                cancelAnimationFrame(rafId);
+                rafId = 0;
+            }
+
+            if (glowEnabled && !rafId) {
+                rafId = requestAnimationFrame(animate);
+            }
+        };
+
+        const animate = () => {
+            if (!glowEnabled) {
+                rafId = 0;
+                return;
+            }
+
+            currentX += (targetX - currentX) * 0.18;
+            currentY += (targetY - currentY) * 0.18;
+
+            glow.style.transform =
+                `translate3d(${currentX}px, ${currentY}px, 0) translate3d(-50%, -50%, 0)`;
+
+            rafId = requestAnimationFrame(animate);
+        };
+
+        window.addEventListener("pointermove", (event) => {
+            if (!glowEnabled || event.pointerType !== "mouse") return;
+            targetX = event.clientX;
+            targetY = event.clientY;
+        }, { passive: true });
+
+        window.addEventListener("pointerleave", () => {
+            glow.style.opacity = "0";
+        });
+
+        window.addEventListener("pointerenter", () => {
+            if (glowEnabled) glow.style.opacity = "1";
+        });
+
+        window.setGlowEnabled(true);
+
+        window.addEventListener("beforeunload", () => {
+            if (rafId) cancelAnimationFrame(rafId);
+        });
+    })();
+    </script>
+
 </body>
 </html>
