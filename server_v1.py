@@ -164,6 +164,29 @@ async def home():
     )
 
 
+
+# ============================================================
+# VIDEO CALL PAGE
+# ============================================================
+
+CALL_FILE = BASE_DIR / "web" / "call.html"
+
+
+@app.get("/call")
+async def call_page():
+
+    if not CALL_FILE.exists():
+
+        return {
+            "status": "error",
+            "message": "web/call.html not found"
+        }
+
+    return FileResponse(
+        str(CALL_FILE),
+        media_type="text/html"
+    )
+
 # ============================================================
 # HEALTH
 # ============================================================
