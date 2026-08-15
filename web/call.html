@@ -904,8 +904,16 @@
             localVideo.srcObject = localStream;
             await localVideo.play();
 
-            landmarkCanvas.width = localVideo.videoWidth || 640;
-            landmarkCanvas.height = localVideo.videoHeight || 480;
+            const resizeLandmarkCanvas = () => {
+                landmarkCanvas.width = localVideo.videoWidth || 640;
+                landmarkCanvas.height = localVideo.videoHeight || 480;
+            };
+
+            if (localVideo.readyState >= 1) {
+                resizeLandmarkCanvas();
+            } else {
+                localVideo.addEventListener("loadedmetadata", resizeLandmarkCanvas, { once: true });
+            }
 
             initMediaPipeEngine();
             requestAnimationFrame(renderAILoop);
@@ -938,7 +946,21 @@
             try {
                 procCanvas.width = localVideo.videoWidth || 640;
                 procCanvas.height = localVideo.videoHeight || 480;
-                procCtx.drawImage(localVideo, 0, 0, procCanvas.width, procCanvas.height);
+
+                // Mirror the frame before MediaPipe processing so handedness
+                // matches selfie-camera orientation used by the sign model.
+                procCtx.save();
+                procCtx.translate(procCanvas.width, 0);
+                procCtx.scale(-1, 1);
+                procCtx.drawImage(
+                    localVideo,
+                    0,
+                    0,
+                    procCanvas.width,
+                    procCanvas.height
+                );
+                procCtx.restore();
+
                 await hands.send({ image: procCanvas });
             } catch (err) {
                 console.error("AI frame loop error:", err);
