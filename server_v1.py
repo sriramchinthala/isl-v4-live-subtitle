@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 
 # ============================================================
@@ -17,6 +17,7 @@ BASE_DIR = Path.cwd()
 MODEL_FILE = BASE_DIR / "best_landmark_model_v4.keras"
 CLASS_FILE = BASE_DIR / "landmark_classes_v4.json"
 WEB_FILE = BASE_DIR / "web" / "index.html"
+CALL_FILE = BASE_DIR / "web" / "call.html"
 
 
 # ============================================================
@@ -123,6 +124,22 @@ async def lifespan(app):
             "WARNING: web/index.html not found."
         )
 
+    if CALL_FILE.exists():
+
+        print(
+            "Video call frontend found:"
+        )
+
+        print(
+            str(CALL_FILE)
+        )
+
+    else:
+
+        print(
+            "WARNING: web/call.html not found."
+        )
+
     print("=" * 70)
 
     yield
@@ -150,6 +167,39 @@ app = FastAPI(
 @app.get("/")
 async def home():
 
+    return RedirectResponse(
+        url="/call"
+    )
+
+
+# ============================================================
+# VIDEO CALL PAGE
+# ============================================================
+
+@app.get("/call")
+async def call_page():
+
+    if not CALL_FILE.exists():
+
+        return {
+            "status": "error",
+            "message":
+                "web/call.html not found"
+        }
+
+    return FileResponse(
+        str(CALL_FILE),
+        media_type="text/html"
+    )
+
+
+# ============================================================
+# OPTIONAL MAIN WEBSITE PAGE
+# ============================================================
+
+@app.get("/home")
+async def main_website():
+
     if not WEB_FILE.exists():
 
         return {
@@ -163,29 +213,6 @@ async def home():
         media_type="text/html"
     )
 
-
-
-# ============================================================
-# VIDEO CALL PAGE
-# ============================================================
-
-CALL_FILE = BASE_DIR / "web" / "call.html"
-
-
-@app.get("/call")
-async def call_page():
-
-    if not CALL_FILE.exists():
-
-        return {
-            "status": "error",
-            "message": "web/call.html not found"
-        }
-
-    return FileResponse(
-        str(CALL_FILE),
-        media_type="text/html"
-    )
 
 # ============================================================
 # HEALTH
@@ -203,7 +230,9 @@ async def health():
         "classes":
             classes,
         "frontend_exists":
-            WEB_FILE.exists()
+            WEB_FILE.exists(),
+        "call_page_exists":
+            CALL_FILE.exists()
     }
 
 
