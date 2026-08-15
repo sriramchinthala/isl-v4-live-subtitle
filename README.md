@@ -1,10 +1,13 @@
 # ISL V4 Live Subtitle
 
-A real-time Indian Sign Language (ISL) recognition web application that uses a webcam to detect hand landmarks, classify signs with a TensorFlow V4 model, and convert recognized signs into live English subtitles.
+A real-time Indian Sign Language (ISL) recognition and accessible video communication web application that uses a webcam to detect hand landmarks, classify signs with a TensorFlow V4 model, convert recognized signs into live English subtitles, and support voice-based communication between participants.
 
 ## Live Demo
 
-**Live Application:**
+**Main Video Call Application:**
+https://isl-v4-live-subtitle.onrender.com/call
+
+**Main Website:**
 https://isl-v4-live-subtitle.onrender.com
 
 **GitHub Repository:**
@@ -12,20 +15,40 @@ https://github.com/sriramchinthala/isl-v4-live-subtitle
 
 ## Project Overview
 
-ISL V4 Live Subtitle is designed to recognize selected Indian Sign Language gestures through a webcam and display the corresponding English words and simple sentences in real time.
+ISL V4 Live Subtitle is designed to recognize selected Indian Sign Language gestures through a webcam and convert the recognized signs into English words and simple sentences in real time.
+
+The platform also provides accessible browser-based video communication between participants, allowing users to combine sign language, live subtitles, voice input, and text-to-speech communication.
 
 The application combines:
 
-* Browser webcam access
+* Browser webcam and microphone access
 * MediaPipe Hands
 * 126-dimensional hand-landmark features
 * TensorFlow/Keras V4 classification model
 * FastAPI backend
 * WebSocket communication
+* WebRTC / PeerJS video communication
 * Live English sentence generation
+* Voice-to-text communication
+* Text-to-speech output
+* Live conversation transcript
 * Public HTTPS deployment using Render
 
 ## Main Features
+
+### Accessible Video Calling
+
+The main application provides browser-based video communication with:
+
+* Real-time laptop ↔ phone video calling
+* Browser camera and microphone support
+* Room-based video calls
+* Shareable room links
+* Live ISL subtitles for the opposite participant
+* Voice-to-text communication
+* Text-to-speech for incoming messages
+* Live transcript history
+* Accessibility-focused controls
 
 ### Real-Time Camera Recognition
 
@@ -44,9 +67,7 @@ The application uses:
 
 ### V4 Sign Recognition Model
 
-The backend loads:
-
-`best_landmark_model_v4.keras`
+The backend loads the V4 landmark classification model.
 
 The model currently contains 10 supported sign classes.
 
@@ -67,7 +88,7 @@ The current V4 model includes:
 
 ### Live English Subtitle
 
-Recognized signs are converted into English text.
+Recognized signs are converted into English text and can be sent to the opposite participant during a video call.
 
 Examples:
 
@@ -80,58 +101,114 @@ Examples:
 
 ### Confidence Display
 
-The web interface displays the model's prediction confidence percentage for the current recognition.
+The web interface displays the model's prediction confidence for the current recognition.
 
 ### Duplicate Suppression
 
 The frontend uses stable-prediction logic and hand-release behavior to reduce repeated recognition of the same sign.
 
-### Controls
+### Voice-to-Text Communication
 
-The interface provides:
+Users can speak through the browser microphone and convert speech into text.
 
-* Start Camera
-* Pause / Resume
-* Clear
-* Undo
+The recognized text can be sent to the opposite participant during a video call.
+
+### Text-to-Speech Communication
+
+Incoming subtitle or voice text can be read aloud using browser speech synthesis.
+
+### Live Transcript
+
+The video-call interface can maintain a live conversation transcript containing recognized sign messages and voice messages.
+
+### Signing Safe Area
+
+The interface provides a visual signing guide that helps the signer keep the hands and upper body inside an appropriate camera region.
+
+### Hand Landmark Visualization
+
+The interface can display the detected hand skeleton and landmarks over the signer's camera feed.
+
+### Studio Contrast Mode
+
+The signer view can use enhanced contrast styling to improve hand and upper-body visibility.
+
+### Mouse and Interaction Effects
+
+The interface includes lightweight interaction effects designed to provide a more polished desktop experience without interfering with camera and AI processing.
 
 ## System Architecture
 
 ```text
-Webcam
-   |
-   v
-Browser
-   |
-   v
-MediaPipe Hands
-   |
-   v
-Hand Landmark Extraction
-   |
-   v
-126-Dimensional Feature Vector
-   |
-   v
-30-Frame Sequence
-   |
-   v
-WebSocket
-   |
-   v
-FastAPI Server
-   |
-   v
-TensorFlow V4 Model
-   |
-   v
-Sign Prediction + Confidence
-   |
-   v
-Sentence Builder
-   |
-   v
-Live English Subtitle
+                     ┌─────────────────────┐
+                     │      Webcam         │
+                     └──────────┬──────────┘
+                                |
+                                v
+                     ┌─────────────────────┐
+                     │ Browser Frontend    │
+                     │ HTML/CSS/JavaScript │
+                     └──────────┬──────────┘
+                                |
+                ┌───────────────┴────────────────┐
+                |                                |
+                v                                v
+      ┌───────────────────┐            ┌───────────────────┐
+      │ MediaPipe Hands   │            │ WebRTC / PeerJS   │
+      └─────────┬─────────┘            └─────────┬─────────┘
+                |                                |
+                v                                v
+      ┌───────────────────┐             Video + Data Channel
+      │ Landmark          │                     |
+      │ Extraction        │                     v
+      └─────────┬─────────┘            Opposite Participant
+                |
+                v
+      ┌───────────────────┐
+      │ 126-Dimensional   │
+      │ Feature Vector    │
+      └─────────┬─────────┘
+                |
+                v
+      ┌───────────────────┐
+      │ 30-Frame Sequence │
+      └─────────┬─────────┘
+                |
+                v
+      ┌───────────────────┐
+      │ WebSocket         │
+      └─────────┬─────────┘
+                |
+                v
+      ┌───────────────────┐
+      │ FastAPI Server    │
+      └─────────┬─────────┘
+                |
+                v
+      ┌───────────────────┐
+      │ TensorFlow V4     │
+      │ Classification    │
+      └─────────┬─────────┘
+                |
+                v
+      ┌───────────────────┐
+      │ Sign Prediction   │
+      │ + Confidence      │
+      └─────────┬─────────┘
+                |
+                v
+      ┌───────────────────┐
+      │ Sentence Builder  │
+      └─────────┬─────────┘
+                |
+                v
+      ┌───────────────────┐
+      │ Live English      │
+      │ Subtitle          │
+      └─────────┬─────────┘
+                |
+                v
+      Opposite Participant
 ```
 
 ## Technologies Used
@@ -141,9 +218,13 @@ Live English Subtitle
 * HTML5
 * CSS3
 * JavaScript
-* WebRTC / `getUserMedia`
+* WebRTC
+* PeerJS
+* `getUserMedia`
 * MediaPipe Hands
 * WebSocket client
+* Browser Speech Recognition
+* Browser Speech Synthesis
 
 ### Backend
 
@@ -174,11 +255,12 @@ NEW/
 ├── .python-version
 ├── .gitignore
 ├── requirements.txt
+├── server_v1.py
 ├── best_landmark_model_v4.keras
 ├── landmark_classes_v4.json
-├── server_v1.py
 └── web/
-    └── index.html
+    ├── index.html
+    └── call.html
 ```
 
 ## Backend API
@@ -189,7 +271,7 @@ NEW/
 GET /
 ```
 
-Returns the web application.
+Returns the main web application.
 
 ### Health Check
 
@@ -197,7 +279,7 @@ Returns the web application.
 GET /health
 ```
 
-Returns backend status, model status and loaded classes.
+Returns backend status, model status, and loaded classes.
 
 ### WebSocket
 
@@ -216,7 +298,76 @@ Prediction messages use:
 }
 ```
 
-The server returns the prediction results and confidence values.
+The server returns prediction results and confidence values.
+
+## Video Call Communication
+
+The main video-call interface is available at:
+
+```text
+https://isl-v4-live-subtitle.onrender.com/call
+```
+
+The same application can be opened on both devices.
+
+Typical flow:
+
+```text
+Laptop
+  |
+  | Create Room
+  v
+Room Code / Invite Link
+  |
+  v
+Phone
+  |
+  | Join Room
+  v
+Video + Audio + Subtitle Communication
+```
+
+During a call:
+
+```text
+ISL Sign
+   |
+   v
+AI Prediction
+   |
+   v
+English Subtitle
+   |
+   v
+Opposite Participant
+```
+
+Voice communication can also be used:
+
+```text
+Voice
+   |
+   v
+Speech Recognition
+   |
+   v
+Text
+   |
+   v
+Opposite Participant
+```
+
+Incoming text can be converted to speech:
+
+```text
+Incoming Text
+   |
+   v
+Browser Text-to-Speech
+   |
+   v
+Audio Output
+```
 
 ## Local Setup
 
@@ -253,13 +404,19 @@ pip install -r requirements.txt
 python -m uvicorn server_v1:app --host 127.0.0.1 --port 8000
 ```
 
-### 5. Open the application
+### 5. Open the main application
 
 ```text
 http://127.0.0.1:8000
 ```
 
-Allow camera access when the browser asks for permission.
+### 6. Open the video-call application
+
+```text
+http://127.0.0.1:8000/call
+```
+
+Allow camera and microphone access when the browser asks for permission.
 
 ## Deployment
 
@@ -312,6 +469,7 @@ The frontend then:
 3. Adds the recognized word.
 4. Builds a simple English sentence.
 5. Displays the result as a live subtitle.
+6. Sends the subtitle to the opposite participant when connected.
 
 ## Example
 
@@ -341,6 +499,36 @@ Output:
 You want food?
 ```
 
+Input:
+
+```text
+YOU
+HELP
+```
+
+Output:
+
+```text
+Do you need help?
+```
+
+## Accessibility Design
+
+The video-call interface is designed around accessible communication.
+
+Key interface elements include:
+
+* Large readable live captions
+* High-contrast subtitle presentation
+* Signing safe-zone guidance
+* Optional hand skeleton overlay
+* Studio contrast mode
+* Voice-to-text input
+* Text-to-speech output
+* Live transcript history
+* Simple room-based calling
+* Responsive desktop and mobile layout
+
 ## Current Limitations
 
 The current system is a prototype focused on a selected set of ISL signs rather than complete Indian Sign Language coverage.
@@ -359,6 +547,10 @@ Recognition accuracy can be affected by:
 
 The current model recognizes the trained sign classes only.
 
+Browser support for speech recognition and speech synthesis can vary by device and browser.
+
+The public deployment depends on browser permissions, network connectivity, and the availability of the deployed service.
+
 ## Future Scope
 
 Future versions can include:
@@ -369,7 +561,7 @@ Future versions can include:
 * Continuous sentence recognition
 * Better grammar correction
 * Natural-language generation
-* Voice output
+* More advanced voice output
 * Mobile application support
 * User-specific adaptation
 * Better duplicate suppression
@@ -377,10 +569,13 @@ Future versions can include:
 * Offline deployment
 * GPU acceleration
 * More robust sentence understanding
+* Expanded accessibility features
 
 ## Project Goal
 
 The long-term goal is to develop an accessible real-time communication system that can help bridge communication between Indian Sign Language users and people who do not understand sign language.
+
+The project combines sign-language recognition, live captioning, video communication, voice interaction, and text-to-speech into a single accessible communication platform.
 
 ## Status
 
@@ -392,8 +587,24 @@ The long-term goal is to develop an accessible real-time communication system th
 * V4 TensorFlow model: ✅
 * WebSocket backend: ✅
 * Live English subtitles: ✅
+* Accessible video calling: ✅
+* Voice-to-text communication: ✅
+* Text-to-speech communication: ✅
+* Live transcript: ✅
 * GitHub repository: ✅
 * Public Render deployment: ✅
+* Main video-call application: ✅
+
+## Public Links
+
+**Main Video Call:**
+https://isl-v4-live-subtitle.onrender.com/call
+
+**Main Website:**
+https://isl-v4-live-subtitle.onrender.com
+
+**GitHub Repository:**
+https://github.com/sriramchinthala/isl-v4-live-subtitle
 
 ## Author
 
