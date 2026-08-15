@@ -3,2800 +3,1224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISL Connect — Next-Gen Accessible Video Calls</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
-    <title>ISL Accessible Video Call</title>
-
+    <!-- External Libraries -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
     <style>
+        :root {
+            --bg-deep: #05070a;
+            --bg-card: rgba(14, 18, 27, 0.7);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(16, 185, 129, 0.4);
+            
+            --primary: #10b981;
+            --primary-glow: rgba(16, 185, 129, 0.35);
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.35);
+            --danger: #f43f5e;
+            --danger-glow: rgba(244, 63, 94, 0.35);
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            
+            --radius-xl: 24px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-sans);
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* ===== WORLD-CLASS AMBIENT BACKGROUND ===== */
         body {
-            margin: 0;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
             min-height: 100vh;
-            background: #0f1115;
-            color: #fff;
-            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
         }
 
-        .app {
-            width: min(1250px, 95vw);
-            margin: 20px auto 40px;
+        /* Interactive Dynamic Aurora Mesh Glow */
+        .ambient-aurora {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 18px;
+        .aurora-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.22;
+            will-change: transform;
+            animation: drift 20s infinite alternate ease-in-out;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: clamp(28px, 4vw, 42px);
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, #10b981 0%, transparent 70%);
+            top: -150px;
+            left: -100px;
         }
 
-        header p {
-            color: #aab1bd;
-            margin: 8px 0 0;
+        .orb-2 {
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+            bottom: -200px;
+            right: -100px;
+            animation-duration: 25s;
+            animation-delay: -5s;
         }
 
-        .card {
-            background: #1a1d23;
-            border: 1px solid #2a2f38;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 18px;
+        .orb-3 {
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, #06b6d4 0%, transparent 70%);
+            top: 40%;
+            left: 35%;
+            animation-duration: 18s;
+            animation-delay: -10s;
+            opacity: 0.12;
         }
 
-        .setup-row {
+        @keyframes drift {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(60px, 40px, 0) scale(1.1); }
+            100% { transform: translate3d(-40px, 80px, 0) scale(0.95); }
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 36px;
+            background: rgba(8, 11, 17, 0.65);
+            backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .brand-cluster {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .brand-title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(180deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 6px 14px;
+            border-radius: 100px;
+            border: 1px solid var(--border-glass);
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #eab308;
+        }
+        .pulse-dot.live { background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+        .pulse-dot.speaking { background: var(--danger); animation: ringPulse 1.2s infinite; }
+
+        @keyframes ringPulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.6); opacity: 0.4; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ===== MAIN WORKSPACE ===== */
+        .workspace {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1480px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 24px;
+            gap: 20px;
+        }
+
+        /* ===== QUICK ACCESS LOBBY BAR ===== */
+        .lobby-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-xl);
+            padding: 16px 24px;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
         }
 
-        input {
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             flex: 1;
-            min-width: 200px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            border: 1px solid #3a414c;
-            background: #101217;
+            min-width: 320px;
+        }
+
+        .modern-input {
+            flex: 1;
+            background: rgba(5, 7, 10, 0.7);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 12px 18px;
             color: #fff;
+            font-size: 15px;
+            font-weight: 500;
             outline: none;
+            transition: all 0.2s;
         }
 
-        button {
-            border: 0;
-            border-radius: 10px;
-            padding: 11px 16px;
+        .modern-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        /* Button Archetypes */
+        .btn {
+            border: none;
+            outline: none;
             cursor: pointer;
-            background: #f1f3f5;
-            color: #14171c;
-            font-size: 14px;
             font-weight: 600;
-        }
-
-        button:hover:not(:disabled) {
-            opacity: 0.9;
-        }
-
-        button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        button.active {
-            background: #63e6be;
-            color: #101217;
-        }
-
-        .status {
-            margin-top: 12px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            background: #242932;
-            color: #dce1e9;
+            border-radius: var(--radius-md);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 22px;
             font-size: 14px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .peer-id {
-            margin-top: 10px;
-            color: #aab1bd;
-            font-size: 13px;
-            word-break: break-all;
+        .btn:active { transform: scale(0.96); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #042f1a;
+            font-weight: 700;
+            box-shadow: 0 4px 16px var(--primary-glow);
+        }
+        .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border-glass);
+        }
+        .btn-ghost:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255,255,255,0.15); }
+
+        .share-pill {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
         }
 
-        .call-grid {
+        /* ===== VIDEO CINEMA STAGE ===== */
+        .video-stage {
+            flex: 1;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 18px;
+            gap: 22px;
+            min-height: 480px;
         }
 
-        .video-box {
+        .video-pod {
             position: relative;
             background: #000;
-            border-radius: 12px;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border-glass);
             overflow: hidden;
-            aspect-ratio: 16 / 10;
+            aspect-ratio: 16/10;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .video-title {
-            font-size: 13px;
-            color: #aab1bd;
-            margin-bottom: 10px;
+        .video-pod.studio-mode video {
+            filter: contrast(1.15) brightness(1.05) saturate(1.1);
         }
 
         video {
             width: 100%;
             height: 100%;
-            display: block;
             object-fit: cover;
+            display: block;
         }
 
-        #localVideo {
-            transform: scaleX(-1);
-        }
+        #localVideo { transform: scaleX(-1); }
 
-        .subtitle-overlay {
+        #landmarkCanvas {
             position: absolute;
-            left: 5%;
-            right: 5%;
-            bottom: 5%;
-            padding: 12px 16px;
-            background: rgba(0, 0, 0, 0.78);
-            border-radius: 10px;
-            color: #fff;
-            text-align: center;
-            font-size: clamp(18px, 3vw, 30px);
-            font-weight: 700;
-            line-height: 1.3;
-        }
-
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .prediction-box {
-            margin-top: 16px;
-            padding: 14px;
-            background: #101217;
-            border-radius: 12px;
-        }
-
-        .prediction-label {
-            color: #9ea5b1;
-            font-size: 11px;
-            letter-spacing: 0.08em;
-        }
-
-        #prediction {
-            font-size: 28px;
-            font-weight: 700;
-            margin-top: 5px;
-        }
-
-        #confidence {
-            margin-top: 5px;
-            color: #b9c0ca;
-            font-size: 14px;
-        }
-
-        .confidence-bar {
-            height: 8px;
-            border-radius: 999px;
-            background: #2a2f37;
-            overflow: hidden;
-            margin-top: 9px;
-        }
-
-        #confidenceFill {
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 100%;
-            width: 0%;
-            background: #63e6be;
-            transition: width 0.2s ease;
+            pointer-events: none;
+            transform: scaleX(-1);
+            z-index: 2;
         }
 
-        .voice-chat-box {
-            margin-top: 18px;
-            padding-top: 16px;
-            border-top: 1px solid #2a2f38;
-        }
-
-        .voice-chat-buttons {
+        /* SIGNING SAFE ZONE GUIDE OVERLAY */
+        .signing-guide {
+            position: absolute;
+            top: 15%;
+            left: 15%;
+            right: 15%;
+            bottom: 12%;
+            border: 2px dashed rgba(16, 185, 129, 0.4);
+            border-radius: var(--radius-lg);
+            pointer-events: none;
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: rgba(16, 185, 129, 0.02);
+            z-index: 3;
+            transition: opacity 0.3s;
         }
 
-        .voice-input-status {
-            margin-top: 10px;
-            color: #aeb4be;
+        .signing-guide.hidden { opacity: 0; }
+
+        /* VIDEO POD BADGES */
+        .pod-header {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .participant-badge {
+            background: rgba(10, 13, 18, 0.75);
+            backdrop-filter: blur(12px);
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* AI PREDICTION HUD */
+        .ai-hud-card {
+            background: rgba(10, 13, 18, 0.82);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-highlight);
+            padding: 6px 14px;
+            border-radius: 100px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .hud-sign-label {
             font-size: 13px;
+            font-weight: 800;
+            color: #34d399;
+            font-family: var(--font-mono);
         }
 
-        .voice-text {
-            margin-top: 10px;
-            min-height: 55px;
-            padding: 12px 14px;
-            background: #101217;
+        .hud-meter-wrap {
+            width: 44px;
+            height: 5px;
+            background: rgba(255,255,255,0.1);
             border-radius: 10px;
-            font-size: 18px;
-            line-height: 1.45;
+            overflow: hidden;
         }
 
-        .voice-options {
+        .hud-meter-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.15s;
+        }
+
+        /* WORLD'S BEST SUBTITLE CONTAINER */
+        .subtitle-box {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            text-align: center;
+            background: rgba(6, 8, 12, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(20px);
+            padding: 14px 24px;
+            border-radius: var(--radius-lg);
+            font-size: clamp(18px, 2.2vw, 26px);
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.01em;
+            line-height: 1.4;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+            z-index: 5;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .subtitle-box.idle {
+            opacity: 0;
+            transform: translateX(-50%) translateY(12px);
+            pointer-events: none;
+        }
+
+        /* ===== FLOATING MODERN CONTROL DOCK ===== */
+        .dock-wrapper {
+            position: relative;
+            z-index: 10;
+            margin: 0 auto;
+            padding: 6px;
+            background: rgba(14, 18, 27, 0.75);
+            backdrop-filter: blur(28px);
+            border: 1px solid var(--border-glass);
+            border-radius: 100px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
             display: flex;
-            flex-wrap: wrap;
+            align-items: center;
             gap: 10px;
-            margin-top: 12px;
         }
 
-        .info {
-            color: #aeb4be;
-            line-height: 1.6;
+        .dock-item {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-glass);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .dock-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .dock-item.active {
+            background: var(--primary);
+            color: #032b17;
+            border-color: transparent;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .dock-item.danger {
+            background: var(--danger);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .dock-item.danger:hover {
+            box-shadow: 0 0 20px var(--danger-glow);
+        }
+
+        .dock-tooltip {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f141d;
+            border: 1px solid var(--border-glass);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s;
+        }
+
+        .dock-item:hover .dock-tooltip { opacity: 1; }
+
+        /* ===== LIVE TRANSCRIPT DRAWER ===== */
+        .transcript-drawer {
+            position: fixed;
+            top: 80px;
+            right: -380px;
+            width: 350px;
+            height: calc(100vh - 105px);
+            background: rgba(14, 18, 27, 0.95);
+            backdrop-filter: blur(28px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 100;
+            box-shadow: -15px 0 40px rgba(0,0,0,0.6);
+        }
+
+        .transcript-drawer.open { right: 24px; }
+
+        .drawer-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-glass);
+            margin-bottom: 16px;
+        }
+
+        .history-feed {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-bubble {
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
             font-size: 14px;
+            line-height: 1.45;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
         }
 
-        .hidden {
-            display: none;
+        .chat-bubble.signer { border-left: 3px solid var(--primary); }
+        .chat-bubble.speaker { border-left: 3px solid var(--accent); }
+
+        .bubble-author {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
         }
 
-        @media (max-width: 850px) {
-            .call-grid {
-                grid-template-columns: 1fr;
-            }
+        /* ===== TOAST NOTIFICATIONS ===== */
+        .toast-shelf {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .toast-card {
+            background: rgba(14, 18, 27, 0.95);
+            border: 1px solid var(--border-glass);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(16px);
+            animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes popIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 950px) {
+            .video-stage { grid-template-columns: 1fr; }
+            .lobby-bar { flex-direction: column; align-items: stretch; }
+            .navbar { padding: 14px 20px; }
         }
     </style>
 </head>
-
 <body>
 
-<div class="app">
+    <!-- DYNAMIC AMBIENT MESH BACKGROUND -->
+    <div class="ambient-aurora">
+        <div class="aurora-orb orb-1"></div>
+        <div class="aurora-orb orb-2"></div>
+        <div class="aurora-orb orb-3"></div>
+    </div>
 
-    <header>
-        <h1>ISL Accessible Video Call</h1>
-        <p>ISL + Live Subtitles + Voice Communication</p>
+    <!-- TOP NAVBAR -->
+    <header class="navbar">
+        <div class="brand-cluster">
+            <div class="brand-icon">🤟</div>
+            <div class="brand-title">ISL CONNECT</div>
+        </div>
+
+        <div class="nav-meta">
+            <div class="status-pill">
+                <div id="statusPulse" class="pulse-dot"></div>
+                <span id="statusLabel">Lobby Ready</span>
+            </div>
+        </div>
     </header>
 
+    <!-- MAIN APP CANVAS -->
+    <main class="workspace">
 
-    <!-- ROOM -->
-
-    <section class="card">
-
-        <div class="setup-row">
-
-            <input
-                id="roomInput"
-                type="text"
-                maxlength="20"
-                placeholder="Enter room code">
-
-            <button id="createButton">
-                Create Room
-            </button>
-
-            <button id="joinButton">
-                Join Room
-            </button>
-
-        </div>
-
-        <div
-            id="status"
-            class="status">
-            Create or join a room.
-        </div>
-
-        <div
-            id="peerIdText"
-            class="peer-id">
-            Room / Peer ID: —
-        </div>
-
-    </section>
-
-
-    <!-- VIDEOS -->
-
-    <section class="call-grid">
-
-        <div class="card">
-
-            <div class="video-title">
-                YOUR CAMERA
+        <!-- LOBBY FAST-JOIN BAR -->
+        <section id="lobbyBar" class="lobby-bar">
+            <div class="input-group">
+                <input id="roomInput" class="modern-input" type="text" placeholder="Enter room code or click Create...">
+                <button id="createRoomBtn" class="btn btn-primary">✨ Create Room</button>
+                <button id="joinRoomBtn" class="btn btn-ghost">Join</button>
             </div>
 
-            <div class="video-box">
-
-                <video
-                    id="localVideo"
-                    autoplay
-                    playsinline
-                    muted>
-                </video>
-
+            <div id="sharePill" class="share-pill">
+                <span style="font-size: 13px;">Code: <strong id="currentRoomText" style="color:var(--primary);">—</strong></span>
+                <button id="copyInviteBtn" class="btn btn-ghost" style="padding:4px 10px; font-size:12px;">📋 Copy Link</button>
             </div>
+        </section>
 
-        </div>
+        <!-- VIDEO FEED STAGE -->
+        <section class="video-stage">
 
+            <!-- LOCAL SIGNER VIEW -->
+            <div id="localPod" class="video-pod">
+                <div class="pod-header">
+                    <div class="participant-badge">
+                        <span style="color:var(--primary);">●</span> You (Signer)
+                    </div>
 
-        <div class="card">
-
-            <div class="video-title">
-                OTHER PERSON
-            </div>
-
-            <div class="video-box">
-
-                <video
-                    id="remoteVideo"
-                    autoplay
-                    playsinline>
-                </video>
-
-                <div
-                    id="remoteSubtitle"
-                    class="subtitle-overlay">
-                    Waiting for subtitle...
+                    <div id="aiHud" class="ai-hud-card" style="display:none;">
+                        <span id="aiLabel" class="hud-sign-label">Scanning...</span>
+                        <div class="hud-meter-wrap">
+                            <div id="aiMeter" class="hud-meter-fill"></div>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- SIGNING SAFE AREA GUIDE -->
+                <div id="signingGuide" class="signing-guide">
+                    Signing Safe Area
+                </div>
+
+                <video id="localVideo" autoplay playsinline muted></video>
+                <canvas id="landmarkCanvas"></canvas>
             </div>
 
-        </div>
+            <!-- REMOTE PARTICIPANT VIEW -->
+            <div class="video-pod">
+                <div class="pod-header">
+                    <div class="participant-badge">
+                        <span style="color:var(--accent);">●</span> Remote Participant
+                    </div>
+                </div>
 
-    </section>
+                <video id="remoteVideo" autoplay playsinline></video>
 
+                <!-- DYNAMIC CAPTIONS -->
+                <div id="subtitleBox" class="subtitle-box idle">
+                    Captions will appear here...
+                </div>
+            </div>
 
-    <!-- CALL CONTROLS -->
+        </section>
 
-    <section class="card">
-
-        <div class="controls">
-
-            <button
-                id="cameraButton">
-                Start Camera
+        <!-- FLOATING CONTROL DOCK -->
+        <div class="dock-wrapper">
+            <!-- Camera Toggle -->
+            <button id="cameraToggle" class="dock-item active">
+                📷
+                <span class="dock-tooltip">Camera On/Off</span>
             </button>
 
-            <button
-                id="callButton"
-                disabled>
-                Connect Call
+            <!-- Skeleton HUD -->
+            <button id="skeletonToggle" class="dock-item active">
+                ✨
+                <span class="dock-tooltip">Skeleton HUD</span>
             </button>
 
-            <button
-                id="hangupButton"
-                disabled>
-                Hang Up
+            <!-- Studio Contrast Filter -->
+            <button id="studioToggle" class="dock-item">
+                🪄
+                <span class="dock-tooltip">Studio Contrast</span>
             </button>
 
-            <button
-                id="clearSubtitleButton">
-                Clear Subtitle
+            <!-- Safe Zone Guide -->
+            <button id="guideToggle" class="dock-item active">
+                📐
+                <span class="dock-tooltip">Signing Guide</span>
             </button>
 
+            <!-- Voice Input (STT) -->
+            <button id="voiceToggle" class="dock-item">
+                🎤
+                <span class="dock-tooltip">Voice to Text</span>
+            </button>
+
+            <!-- Auto Speech (TTS) -->
+            <button id="ttsToggle" class="dock-item">
+                🔊
+                <span class="dock-tooltip">Auto Sign Readout</span>
+            </button>
+
+            <!-- Transcript Drawer -->
+            <button id="drawerToggle" class="dock-item">
+                💬
+                <span class="dock-tooltip">Live Transcript</span>
+            </button>
+
+            <!-- Hang Up -->
+            <button id="hangupBtn" class="dock-item danger" disabled>
+                📞
+                <span class="dock-tooltip">End Call</span>
+            </button>
         </div>
 
+    </main>
 
-        <div class="prediction-box">
-
-            <div class="prediction-label">
-                YOUR ISL PREDICTION
-            </div>
-
-            <div id="prediction">
-                Waiting...
-            </div>
-
-            <div id="confidence">
-                Confidence: 0%
-            </div>
-
-            <div class="confidence-bar">
-
-                <div id="confidenceFill"></div>
-
-            </div>
-
+    <!-- LIVE CONVERSATION HISTORY DRAWER -->
+    <aside id="transcriptDrawer" class="transcript-drawer">
+        <div class="drawer-top">
+            <span style="font-weight:700; font-size:16px;">Live Transcript</span>
+            <button id="closeDrawer" style="background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
         </div>
-
-
-        <!-- VOICE INPUT -->
-
-        <div class="voice-chat-box">
-
-            <div class="prediction-label">
-                VOICE INPUT
-            </div>
-
-            <div class="voice-chat-buttons">
-
-                <button
-                    id="voiceInputButton">
-                    🎤 Start Speaking
-                </button>
-
-                <button
-                    id="stopVoiceButton"
-                    disabled>
-                    ⏹ Stop
-                </button>
-
-            </div>
-
-            <div
-                id="voiceInputStatus"
-                class="voice-input-status">
-                Voice input is ready.
-            </div>
-
-            <div
-                id="voiceText"
-                class="voice-text">
-                ...
-            </div>
-
-            <div class="voice-options">
-
-                <button
-                    id="autoSpeakButton">
-                    🔊 Auto Voice: OFF
-                </button>
-
-                <button
-                    id="speakRemoteButton">
-                    🔊 Speak Current Text
-                </button>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- INFO -->
-
-    <section class="card info">
-
-        <strong>Accessibility flow:</strong>
-
-        ISL user signs → AI prediction → English subtitle
-        → opposite person's screen.
-
-        Voice user speaks → speech-to-text → text is sent
-        to the opposite person.
-
-        Incoming text can also be read aloud using browser
-        text-to-speech.
-
-    </section>
-
-</div>
-
-
-<script>
-"use strict";
-
-
-// ============================================================
-// ELEMENTS
-// ============================================================
-
-const roomInput =
-    document.getElementById("roomInput");
-
-const createButton =
-    document.getElementById("createButton");
-
-const joinButton =
-    document.getElementById("joinButton");
-
-const cameraButton =
-    document.getElementById("cameraButton");
-
-const callButton =
-    document.getElementById("callButton");
-
-const hangupButton =
-    document.getElementById("hangupButton");
-
-const clearSubtitleButton =
-    document.getElementById(
-        "clearSubtitleButton"
-    );
-
-const statusElement =
-    document.getElementById("status");
-
-const peerIdText =
-    document.getElementById("peerIdText");
-
-const localVideo =
-    document.getElementById("localVideo");
-
-const remoteVideo =
-    document.getElementById("remoteVideo");
-
-const remoteSubtitle =
-    document.getElementById(
-        "remoteSubtitle"
-    );
-
-const predictionElement =
-    document.getElementById(
-        "prediction"
-    );
-
-const confidenceElement =
-    document.getElementById(
-        "confidence"
-    );
-
-const confidenceFill =
-    document.getElementById(
-        "confidenceFill"
-    );
-
-const voiceInputButton =
-    document.getElementById(
-        "voiceInputButton"
-    );
-
-const stopVoiceButton =
-    document.getElementById(
-        "stopVoiceButton"
-    );
-
-const voiceInputStatus =
-    document.getElementById(
-        "voiceInputStatus"
-    );
-
-const voiceTextElement =
-    document.getElementById(
-        "voiceText"
-    );
-
-const autoSpeakButton =
-    document.getElementById(
-        "autoSpeakButton"
-    );
-
-const speakRemoteButton =
-    document.getElementById(
-        "speakRemoteButton"
-    );
-
-
-// ============================================================
-// STATE
-// ============================================================
-
-let peer = null;
-
-let dataConnection = null;
-
-let mediaConnection = null;
-
-let localStream = null;
-
-let roomCode = null;
-
-let cameraStarted = false;
-
-let websocket = null;
-
-let hands = null;
-
-let predictionBusy = false;
-
-let sequence = [];
-
-let candidateLabel = null;
-
-let candidateCount = 0;
-
-let lastAcceptedLabel = null;
-
-let handAbsentCount = 0;
-
-let subtitleWords = [];
-
-let sentenceCompleted = false;
-
-let autoSpeakEnabled = false;
-
-let recognition = null;
-
-let recognitionRunning = false;
-
-let voiceFinalText = "";
-
-
-// ============================================================
-// SETTINGS
-// ============================================================
-
-const SEQUENCE_LENGTH = 30;
-
-const FEATURES = 126;
-
-const CONFIDENCE_THRESHOLD = 0.80;
-
-const STABLE_REQUIRED = 2;
-
-const HAND_UNLOCK_FRAMES = 8;
-
-
-// ============================================================
-// CANVAS
-// ============================================================
-
-const processingCanvas =
-    document.createElement(
-        "canvas"
-    );
-
-const processingCtx =
-    processingCanvas.getContext(
-        "2d"
-    );
-
-
-// ============================================================
-// STATUS
-// ============================================================
-
-function setStatus(text) {
-
-    statusElement.textContent =
-        text;
-
-}
-
-
-// ============================================================
-// ROOM CODE
-// ============================================================
-
-function cleanRoomCode(value) {
-
-    return String(value || "")
-        .trim()
-        .toUpperCase()
-        .replace(
-            /[^A-Z0-9_-]/g,
-            ""
-        )
-        .slice(
-            0,
-            20
-        );
-
-}
-
-
-function createRandomRoom() {
-
-    return (
-        "ISL" +
-        Math.random()
-            .toString(36)
-            .slice(2, 8)
-            .toUpperCase()
-    );
-
-}
-
-
-// ============================================================
-// CAMERA
-// ============================================================
-
-async function startCamera() {
-
-    if (localStream) {
-
-        return;
-
+        <div id="transcriptFeed" class="history-feed"></div>
+    </aside>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastShelf" class="toast-shelf"></div>
+
+    <script>
+    "use strict";
+
+    // ==========================================
+    // APPLICATION STATE
+    // ==========================================
+    let peer = null;
+    let dataConn = null;
+    let mediaConn = null;
+    let localStream = null;
+    let roomCode = null;
+    let websocket = null;
+    let hands = null;
+
+    let showSkeleton = true;
+    let isProcessing = false;
+    let studioMode = false;
+    let autoSpeak = false;
+    let speechActive = false;
+    let recognition = null;
+
+    let sequence = [];
+    const SEQUENCE_LENGTH = 30;
+    const FEATURES = 126;
+    const CONFIDENCE_THRESHOLD = 0.75;
+    let candidateLabel = null;
+    let candidateCount = 0;
+    let lastAcceptedSign = null;
+    let signHistory = [];
+
+    // DOM Nodes
+    const roomInput = document.getElementById("roomInput");
+    const createRoomBtn = document.getElementById("createRoomBtn");
+    const joinRoomBtn = document.getElementById("joinRoomBtn");
+    const sharePill = document.getElementById("sharePill");
+    const currentRoomText = document.getElementById("currentRoomText");
+    const copyInviteBtn = document.getElementById("copyInviteBtn");
+
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+    const localPod = document.getElementById("localPod");
+    const landmarkCanvas = document.getElementById("landmarkCanvas");
+    const landmarkCtx = landmarkCanvas.getContext("2d");
+    const signingGuide = document.getElementById("signingGuide");
+
+    const statusPulse = document.getElementById("statusPulse");
+    const statusLabel = document.getElementById("statusLabel");
+    const aiHud = document.getElementById("aiHud");
+    const aiLabel = document.getElementById("aiLabel");
+    const aiMeter = document.getElementById("aiMeter");
+    const subtitleBox = document.getElementById("subtitleBox");
+
+    const cameraToggle = document.getElementById("cameraToggle");
+    const skeletonToggle = document.getElementById("skeletonToggle");
+    const studioToggle = document.getElementById("studioToggle");
+    const guideToggle = document.getElementById("guideToggle");
+    const voiceToggle = document.getElementById("voiceToggle");
+    const ttsToggle = document.getElementById("ttsToggle");
+    const drawerToggle = document.getElementById("drawerToggle");
+    const transcriptDrawer = document.getElementById("transcriptDrawer");
+    const closeDrawer = document.getElementById("closeDrawer");
+    const transcriptFeed = document.getElementById("transcriptFeed");
+    const hangupBtn = document.getElementById("hangupBtn");
+    const toastShelf = document.getElementById("toastShelf");
+
+    const procCanvas = document.createElement("canvas");
+    const procCtx = procCanvas.getContext("2d");
+
+    // ==========================================
+    // UX NOTIFICATION ENGINE
+    // ==========================================
+    function pushToast(msg) {
+        const toast = document.createElement("div");
+        toast.className = "toast-card";
+        toast.textContent = msg;
+        toastShelf.appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
     }
 
-    try {
-
-        setStatus(
-            "Requesting camera and microphone..."
-        );
-
-        if (
-            !navigator.mediaDevices ||
-            !navigator.mediaDevices.getUserMedia
-        ) {
-
-            throw new Error(
-                "Camera/microphone access is not available. Use HTTPS."
-            );
-
-        }
-
-        localStream =
-            await navigator
-                .mediaDevices
-                .getUserMedia({
-
-                    video: {
-
-                        width: {
-                            ideal: 960
-                        },
-
-                        height: {
-                            ideal: 720
-                        },
-
-                        facingMode:
-                            "user"
-
-                    },
-
-                    audio: true
-
-                });
-
-        localVideo.srcObject =
-            localStream;
-
-        await localVideo.play();
-
-        cameraStarted =
-            true;
-
-        cameraButton.textContent =
-            "Camera Ready";
-
-        cameraButton.disabled =
-            true;
-
-        if (peer) {
-
-            callButton.disabled =
-                false;
-
-        }
-
-        setStatus(
-            "Camera and microphone ready."
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Camera error:",
-            error
-        );
-
-        setStatus(
-            "Camera error: " +
-            error.message
-        );
-
+    function updateStatus(text, mode = "idle") {
+        statusLabel.textContent = text;
+        statusPulse.className = "pulse-dot";
+        if (mode === "live") statusPulse.classList.add("live");
+        if (mode === "speaking") statusPulse.classList.add("speaking");
     }
 
-}
-
-
-// ============================================================
-// PEER
-// ============================================================
-
-function makePeer(peerId) {
-
-    return new Promise(
-        (resolve, reject) => {
-
-            const newPeer =
-                peerId
-                    ? new Peer(
-                        peerId,
-                        {
-                            debug: 1
-                        }
-                    )
-                    : new Peer(
-                        undefined,
-                        {
-                            debug: 1
-                        }
-                    );
-
-            newPeer.on(
-                "open",
-                id => {
-
-                    peerIdText.textContent =
-                        "Room / Peer ID: " +
-                        id;
-
-                    resolve(
-                        newPeer
-                    );
-
-                }
-            );
-
-            newPeer.on(
-                "error",
-                error => {
-
-                    console.error(
-                        "Peer error:",
-                        error
-                    );
-
-                    reject(
-                        error
-                    );
-
-                }
-            );
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// PEER EVENTS
-// ============================================================
-
-function setupPeerEvents() {
-
-    if (!peer) {
-
-        return;
-
+    function appendTranscript(author, text, isMe) {
+        const item = document.createElement("div");
+        item.className = `chat-bubble ${isMe ? 'signer' : 'speaker'}`;
+        item.innerHTML = `<div class="bubble-author">${author}</div><div>${text}</div>`;
+        transcriptFeed.appendChild(item);
+        transcriptFeed.scrollTop = transcriptFeed.scrollHeight;
     }
 
-    peer.on(
-        "connection",
-        connection => {
-
-            setupDataConnection(
-                connection
-            );
-
-        }
-    );
-
-    peer.on(
-        "call",
-        incomingCall => {
-
-            if (!localStream) {
-
-                setStatus(
-                    "Incoming call received. Start camera first."
-                );
-
-                return;
-
-            }
-
-            mediaConnection =
-                incomingCall;
-
-            incomingCall.answer(
-                localStream
-            );
-
-            setupMediaConnection(
-                incomingCall
-            );
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// DATA CONNECTION
-// ============================================================
-
-function setupDataConnection(
-    connection
-) {
-
-    dataConnection =
-        connection;
-
-    dataConnection.on(
-        "open",
-        () => {
-
-            setStatus(
-                "Video + subtitle data connection connected."
-            );
-
-            callButton.disabled =
-                false;
-
-        }
-    );
-
-    dataConnection.on(
-        "data",
-        data => {
-
-            handleRemoteData(
-                data
-            );
-
-        }
-    );
-
-    dataConnection.on(
-        "close",
-        () => {
-
-            setStatus(
-                "Subtitle data connection closed."
-            );
-
-        }
-    );
-
-    dataConnection.on(
-        "error",
-        error => {
-
-            console.error(
-                "Data connection error:",
-                error
-            );
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// REMOTE DATA
-// ============================================================
-
-function handleRemoteData(
-    data
-) {
-
-    if (!data) {
-
-        return;
-
-    }
-
-    if (
-        typeof data ===
-        "object" &&
-        data.type ===
-        "subtitle"
-    ) {
-
-        const text =
-            String(
-                data.text || ""
-            ).trim();
-
+    function renderSubtitle(text) {
         if (!text) {
-
+            subtitleBox.classList.add("idle");
             return;
-
         }
-
-        remoteSubtitle.textContent =
-            text;
-
-        voiceTextElement.textContent =
-            text;
-
-        if (
-            autoSpeakEnabled
-        ) {
-
-            speakText(
-                text
-            );
-
-        }
-
-        return;
-
+        subtitleBox.textContent = text;
+        subtitleBox.classList.remove("idle");
     }
 
-
-    if (
-        typeof data ===
-        "object" &&
-        data.type ===
-        "voice_text"
-    ) {
-
-        const text =
-            String(
-                data.text || ""
-            ).trim();
-
-        if (!text) {
-
-            return;
-
+    // ==========================================
+    // ONE-CLICK JOIN & URL SHARING
+    // ==========================================
+    window.addEventListener("DOMContentLoaded", () => {
+        const params = new URLSearchParams(window.location.search);
+        const room = params.get("room");
+        if (room) {
+            roomInput.value = room;
+            pushToast(`Room ${room} loaded from URL. Click Join!`);
         }
-
-        remoteSubtitle.textContent =
-            text;
-
-        voiceTextElement.textContent =
-            text;
-
-        if (
-            autoSpeakEnabled
-        ) {
-
-            speakText(
-                text
-            );
-
-        }
-
-        return;
-
-    }
-
-
-    if (
-        typeof data ===
-        "object" &&
-        data.type ===
-        "clear_subtitle"
-    ) {
-
-        remoteSubtitle.textContent =
-            "Waiting for subtitle...";
-
-        voiceTextElement.textContent =
-            "...";
-
-        return;
-
-    }
-
-}
-
-
-// ============================================================
-// SEND DATA
-// ============================================================
-
-function sendData(
-    payload
-) {
-
-    if (
-        !dataConnection ||
-        !dataConnection.open
-    ) {
-
-        setStatus(
-            "Subtitle/voice channel is not connected yet."
-        );
-
-        return false;
-
-    }
-
-    dataConnection.send(
-        payload
-    );
-
-    return true;
-
-}
-
-
-function sendSubtitle(
-    text
-) {
-
-    sendData({
-
-        type:
-            "subtitle",
-
-        text:
-            text,
-
-        timestamp:
-            Date.now()
-
     });
 
-}
-
-
-function sendVoiceText(
-    text
-) {
-
-    sendData({
-
-        type:
-            "voice_text",
-
-        text:
-            text,
-
-        timestamp:
-            Date.now()
-
+    copyInviteBtn.addEventListener("click", () => {
+        const url = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
+        navigator.clipboard.writeText(url);
+        pushToast("Invite link copied to clipboard! 📋");
     });
 
-}
-
-
-// ============================================================
-// VIDEO CONNECTION
-// ============================================================
-
-function setupMediaConnection(
-    connection
-) {
-
-    connection.on(
-        "stream",
-        remoteStream => {
-
-            remoteVideo.srcObject =
-                remoteStream;
-
-            remoteVideo.play()
-                .catch(
-                    () => {}
-                );
-
-            setStatus(
-                "Video call connected."
-            );
-
-            hangupButton.disabled =
-                false;
-
-        }
-    );
-
-    connection.on(
-        "close",
-        () => {
-
-            remoteVideo.srcObject =
-                null;
-
-            hangupButton.disabled =
-                true;
-
-            setStatus(
-                "Video call ended."
-            );
-
-        }
-    );
-
-    connection.on(
-        "error",
-        error => {
-
-            console.error(
-                "Media connection error:",
-                error
-            );
-
-            setStatus(
-                "Video call error."
-            );
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// CREATE ROOM
-// ============================================================
-
-async function createRoom() {
-
-    if (peer) {
-
-        return;
-
-    }
-
-    let code =
-        cleanRoomCode(
-            roomInput.value
-        );
-
-    if (!code) {
-
-        code =
-            createRandomRoom();
-
-        roomInput.value =
-            code;
-
-    }
-
-    roomCode =
-        code;
-
-    try {
-
-        peer =
-            await makePeer(
-                "isl-" +
-                roomCode
-            );
-
-        setupPeerEvents();
-
-        setStatus(
-            "Room created. Share code: " +
-            roomCode
-        );
-
-        if (
-            cameraStarted
-        ) {
-
-            callButton.disabled =
-                false;
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            error
-        );
-
-        peer =
-            null;
-
-        setStatus(
-            "Unable to create room: " +
-            error.message
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// JOIN ROOM
-// ============================================================
-
-async function joinRoom() {
-
-    if (peer) {
-
-        return;
-
-    }
-
-    const code =
-        cleanRoomCode(
-            roomInput.value
-        );
-
-    if (!code) {
-
-        setStatus(
-            "Enter a room code."
-        );
-
-        return;
-
-    }
-
-    roomCode =
-        code;
-
-    try {
-
-        peer =
-            await makePeer();
-
-        setupPeerEvents();
-
-        if (
-            cameraStarted
-        ) {
-
-            callButton.disabled =
-                false;
-
-        }
-
-        setStatus(
-            "Joined room. Ready to connect."
-        );
-
-    } catch (error) {
-
-        console.error(
-            error
-        );
-
-        peer =
-            null;
-
-        setStatus(
-            "Unable to join room: " +
-            error.message
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// CONNECT CALL
-// ============================================================
-
-function connectCall() {
-
-    if (
-        !peer ||
-        !localStream
-    ) {
-
-        setStatus(
-            "Create/join room and start camera first."
-        );
-
-        return;
-
-    }
-
-    if (!roomCode) {
-
-        setStatus(
-            "No room selected."
-        );
-
-        return;
-
-    }
-
-    const remotePeerId =
-        "isl-" +
-        roomCode;
-
-    if (
-        peer.id ===
-        remotePeerId
-    ) {
-
-        setStatus(
-            "You created the room. Ask the other person to join."
-        );
-
-        return;
-
-    }
-
-    setStatus(
-        "Connecting video and subtitle channel..."
-    );
-
-    mediaConnection =
-        peer.call(
-            remotePeerId,
-            localStream
-        );
-
-    setupMediaConnection(
-        mediaConnection
-    );
-
-    dataConnection =
-        peer.connect(
-            remotePeerId,
-            {
-                reliable:
-                    true
-            }
-        );
-
-    setupDataConnection(
-        dataConnection
-    );
-
-    callButton.disabled =
-        true;
-
-}
-
-
-// ============================================================
-// HANG UP
-// ============================================================
-
-function hangup() {
-
-    if (mediaConnection) {
-
-        mediaConnection.close();
-
-        mediaConnection =
-            null;
-
-    }
-
-    if (dataConnection) {
-
-        dataConnection.close();
-
-        dataConnection =
-            null;
-
-    }
-
-    remoteVideo.srcObject =
-        null;
-
-    remoteSubtitle.textContent =
-        "Waiting for subtitle...";
-
-    hangupButton.disabled =
-        true;
-
-    if (
-        cameraStarted
-    ) {
-
-        callButton.disabled =
-            false;
-
-    }
-
-    setStatus(
-        "Call ended."
-    );
-
-}
-
-
-// ============================================================
-// TEXT TO SPEECH
-// ============================================================
-
-function speakText(
-    text
-) {
-
-    const value =
-        String(
-            text || ""
-        ).trim();
-
-    if (!value) {
-
-        return;
-
-    }
-
-    if (
-        !("speechSynthesis" in window)
-    ) {
-
-        setStatus(
-            "Text-to-speech is not supported in this browser."
-        );
-
-        return;
-
-    }
-
-    try {
-
-        window.speechSynthesis.cancel();
-
-        const utterance =
-            new SpeechSynthesisUtterance(
-                value
-            );
-
-        utterance.lang =
-            "en-US";
-
-        utterance.rate =
-            0.95;
-
-        utterance.pitch =
-            1;
-
-        utterance.volume =
-            1;
-
-        window.speechSynthesis.speak(
-            utterance
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Speech error:",
-            error
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// SPEECH RECOGNITION
-// ============================================================
-
-const SpeechRecognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
-
-
-function initializeSpeechRecognition() {
-
-    if (!SpeechRecognition) {
-
-        voiceInputStatus.textContent =
-            "Speech recognition is not supported in this browser.";
-
-        voiceInputButton.disabled =
-            true;
-
-        stopVoiceButton.disabled =
-            true;
-
-        return;
-
-    }
-
-    recognition =
-        new SpeechRecognition();
-
-    recognition.continuous =
-        true;
-
-    recognition.interimResults =
-        true;
-
-    recognition.lang =
-        "en-US";
-
-    recognition.onstart =
-        () => {
-
-            recognitionRunning =
-                true;
-
-            voiceInputStatus.textContent =
-                "Listening...";
-
-            voiceInputButton.disabled =
-                true;
-
-            stopVoiceButton.disabled =
-                false;
-
-        };
-
-    recognition.onresult =
-        event => {
-
-            let interimText =
-                "";
-
-            let finalText =
-                "";
-
-            for (
-                let i =
-                    event.resultIndex;
-                i <
-                    event.results.length;
-                i++
-            ) {
-
-                const transcript =
-                    event.results[i][0]
-                        .transcript
-                        .trim();
-
-                if (
-                    event.results[i].isFinal
-                ) {
-
-                    finalText +=
-                        transcript +
-                        " ";
-
-                } else {
-
-                    interimText +=
-                        transcript +
-                        " ";
-
-                }
-
-            }
-
-            if (
-                finalText
-            ) {
-
-                voiceFinalText +=
-                    finalText;
-
-                voiceTextElement.textContent =
-                    voiceFinalText.trim();
-
-                sendVoiceText(
-                    voiceFinalText.trim()
-                );
-
-            } else {
-
-                voiceTextElement.textContent =
-                    (
-                        voiceFinalText +
-                        interimText
-                    ).trim();
-
-            }
-
-        };
-
-    recognition.onerror =
-        event => {
-
-            console.error(
-                "Speech recognition error:",
-                event.error
-            );
-
-            voiceInputStatus.textContent =
-                "Speech recognition error: " +
-                event.error;
-
-            recognitionRunning =
-                false;
-
-            voiceInputButton.disabled =
-                false;
-
-            stopVoiceButton.disabled =
-                true;
-
-        };
-
-    recognition.onend =
-        () => {
-
-            recognitionRunning =
-                false;
-
-            voiceInputButton.disabled =
-                false;
-
-            stopVoiceButton.disabled =
-                true;
-
-            voiceInputStatus.textContent =
-                "Voice input stopped.";
-
-        };
-
-}
-
-
-// ============================================================
-// START SPEECH
-// ============================================================
-
-function startVoiceInput() {
-
-    if (!recognition) {
-
-        initializeSpeechRecognition();
-
-    }
-
-    if (!recognition) {
-
-        return;
-
-    }
-
-    voiceFinalText =
-        "";
-
-    voiceTextElement.textContent =
-        "...";
-
-    voiceInputStatus.textContent =
-        "Starting microphone...";
-
-    try {
-
-        recognition.start();
-
-    } catch (error) {
-
-        console.error(
-            "Recognition start error:",
-            error
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// STOP SPEECH
-// ============================================================
-
-function stopVoiceInput() {
-
-    if (
-        recognition &&
-        recognitionRunning
-    ) {
-
-        recognition.stop();
-
-    }
-
-}
-
-
-// ============================================================
-// MEDIAPIPE
-// ============================================================
-
-function initializeHands() {
-
-    if (hands) {
-
-        return;
-
-    }
-
-    hands =
-        new Hands({
-
-            locateFile:
-                file => {
-
-                    return (
-                        "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" +
-                        file
-                    );
-
-                }
-
-        });
-
-    hands.setOptions({
-
-        maxNumHands:
-            2,
-
-        modelComplexity:
-            1,
-
-        minDetectionConfidence:
-            0.60,
-
-        minTrackingConfidence:
-            0.60
-
-    });
-
-    hands.onResults(
-        handleLandmarks
-    );
-
-}
-
-
-// ============================================================
-// PREDICTION SOCKET
-// ============================================================
-
-function connectPredictionSocket() {
-
-    return new Promise(
-        (resolve, reject) => {
-
-            const protocol =
-                window.location.protocol ===
-                "https:"
-                    ? "wss:"
-                    : "ws:";
-
-            websocket =
-                new WebSocket(
-                    protocol +
-                    "//" +
-                    window.location.host +
-                    "/ws"
-                );
-
-            websocket.onopen =
-                () => {
-
-                    resolve();
-
-                };
-
-            websocket.onerror =
-                () => {
-
-                    reject(
-                        new Error(
-                            "Prediction WebSocket failed."
-                        )
-                    );
-
-                };
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// PREDICT
-// ============================================================
-
-function predictSequence(
-    sequenceData
-) {
-
-    return new Promise(
-        (resolve, reject) => {
-
-            if (
-                !websocket ||
-                websocket.readyState !==
-                WebSocket.OPEN
-            ) {
-
-                reject(
-                    new Error(
-                        "Prediction server not connected."
-                    )
-                );
-
-                return;
-
-            }
-
-            const handler =
-                event => {
-
-                    try {
-
-                        const data =
-                            JSON.parse(
-                                event.data
-                            );
-
-                        if (
-                            data.type ===
-                            "prediction"
-                        ) {
-
-                            websocket.removeEventListener(
-                                "message",
-                                handler
-                            );
-
-                            resolve(
-                                data.results || []
-                            );
-
-                            return;
-
-                        }
-
-                        if (
-                            data.type ===
-                            "error"
-                        ) {
-
-                            websocket.removeEventListener(
-                                "message",
-                                handler
-                            );
-
-                            reject(
-                                new Error(
-                                    data.message ||
-                                    "Prediction error."
-                                )
-                            );
-
-                        }
-
-                    } catch (error) {
-
-                        websocket.removeEventListener(
-                            "message",
-                            handler
-                        );
-
-                        reject(
-                            error
-                        );
-
-                    }
-
-                };
-
-            websocket.addEventListener(
-                "message",
-                handler
-            );
-
-            websocket.send(
-                JSON.stringify({
-
-                    type:
-                        "predict",
-
-                    sequence:
-                        sequenceData
-
-                })
-            );
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// SENTENCE BUILDER
-// ============================================================
-
-function buildSentence(
-    words
-) {
-
-    const clean =
-        words
-            .map(
-                word =>
-                    String(word)
-                        .trim()
-                        .toUpperCase()
-            )
-            .filter(Boolean);
-
-    if (!clean.length) {
-
-        return "";
-
-    }
-
-    const set =
-        new Set(
-            clean
-        );
-
-    if (
-        set.has("YOU") &&
-        set.has("WATER")
-    ) {
-
-        return "You want water?";
-
-    }
-
-    if (
-        set.has("YOU") &&
-        set.has("FOOD")
-    ) {
-
-        return "You want food?";
-
-    }
-
-    if (
-        set.has("YOU") &&
-        set.has("HELP")
-    ) {
-
-        return "Do you need help?";
-
-    }
-
-    if (
-        set.has("YOU") &&
-        set.has("WHERE")
-    ) {
-
-        return "Where are you?";
-
-    }
-
-    if (
-        set.has("YOU") &&
-        set.has("WHO")
-    ) {
-
-        return "Who are you?";
-
-    }
-
-    if (
-        set.has("YOU") &&
-        set.has("WHAT")
-    ) {
-
-        return "What do you want?";
-
-    }
-
-    if (
-        clean.length === 1
-    ) {
-
-        const single =
-            {
-
-                GOOD:
-                    "Good.",
-
-                BAD:
-                    "Bad.",
-
-                HELP:
-                    "Help.",
-
-                WATER:
-                    "Water.",
-
-                FOOD:
-                    "Food.",
-
-                WELCOME:
-                    "Welcome.",
-
-                WHAT:
-                    "What?",
-
-                WHERE:
-                    "Where?",
-
-                WHO:
-                    "Who are you?",
-
-                YOU:
-                    "You."
-
-            };
-
-        return (
-            single[
-                clean[0]
-            ] ||
-            clean[0]
-        );
-
-    }
-
-    return (
-        clean
-            .map(
-                word =>
-                    word.charAt(0) +
-                    word.slice(1)
-                        .toLowerCase()
-            )
-            .join(" ") +
-        "."
-    );
-
-}
-
-
-// ============================================================
-// ACCEPT SIGN
-// ============================================================
-
-function acceptPrediction(
-    label,
-    confidence
-) {
-
-    if (
-        !label ||
-        confidence <
-        CONFIDENCE_THRESHOLD
-    ) {
-
-        candidateLabel =
-            null;
-
-        candidateCount =
-            0;
-
-        return;
-
-    }
-
-    if (
-        label ===
-        candidateLabel
-    ) {
-
-        candidateCount++;
-
-    } else {
-
-        candidateLabel =
-            label;
-
-        candidateCount =
-            1;
-
-    }
-
-    if (
-        candidateCount <
-        STABLE_REQUIRED
-    ) {
-
-        return;
-
-    }
-
-    if (
-        label ===
-        lastAcceptedLabel
-    ) {
-
-        candidateLabel =
-            null;
-
-        candidateCount =
-            0;
-
-        return;
-
-    }
-
-    if (
-        sentenceCompleted
-    ) {
-
-        subtitleWords =
-            [];
-
-        lastAcceptedLabel =
-            null;
-
-        sentenceCompleted =
-            false;
-
-    }
-
-    if (
-        subtitleWords.length &&
-        subtitleWords[
-            subtitleWords.length - 1
-        ] === label
-    ) {
-
-        candidateLabel =
-            null;
-
-        candidateCount =
-            0;
-
-        return;
-
-    }
-
-    subtitleWords.push(
-        label
-    );
-
-    if (
-        subtitleWords.length >
-        8
-    ) {
-
-        subtitleWords =
-            subtitleWords.slice(
-                -8
-            );
-
-    }
-
-    lastAcceptedLabel =
-        label;
-
-    const sentence =
-        buildSentence(
-            subtitleWords
-        );
-
-    sentenceCompleted =
-        sentence.endsWith(
-            "?"
-        );
-
-    predictionElement.textContent =
-        label;
-
-    if (sentence) {
-
-        sendSubtitle(
-            sentence
-        );
-
-    }
-
-    candidateLabel =
-        null;
-
-    candidateCount =
-        0;
-
-}
-
-
-// ============================================================
-// LANDMARK HANDLING
-// ============================================================
-
-async function handleLandmarks(
-    results
-) {
-
-    if (
-        !results.multiHandLandmarks ||
-        !results.multiHandLandmarks.length
-    ) {
-
-        handAbsentCount++;
-
-        sequence =
-            [];
-
-        candidateLabel =
-            null;
-
-        candidateCount =
-            0;
-
-        if (
-            handAbsentCount >=
-            HAND_UNLOCK_FRAMES
-        ) {
-
-            lastAcceptedLabel =
-                null;
-
-        }
-
-        return;
-
-    }
-
-    handAbsentCount =
-        0;
-
-    const ordered = {
-
-        Left:
-            null,
-
-        Right:
-            null
-
-    };
-
-    if (
-        results.multiHandedness
-    ) {
-
-        results.multiHandedness
-            .forEach(
-                (
-                    handedness,
-                    index
-                ) => {
-
-                    if (
-                        handedness.label ===
-                        "Left"
-                    ) {
-
-                        ordered.Left =
-                            results.multiHandLandmarks[
-                                index
-                            ];
-
-                    }
-
-                    if (
-                        handedness.label ===
-                        "Right"
-                    ) {
-
-                        ordered.Right =
-                            results.multiHandLandmarks[
-                                index
-                            ];
-
-                    }
-
-                }
-            );
-
-    }
-
-    const vector =
-        new Array(
-            FEATURES
-        ).fill(
-            0
-        );
-
-    if (
-        ordered.Left
-    ) {
-
-        const wrist =
-            ordered.Left[0];
-
-        let offset =
-            0;
-
-        ordered.Left.forEach(
-            landmark => {
-
-                vector[offset++] =
-                    landmark.x -
-                    wrist.x;
-
-                vector[offset++] =
-                    landmark.y -
-                    wrist.y;
-
-                vector[offset++] =
-                    landmark.z -
-                    wrist.z;
-
-            }
-        );
-
-    }
-
-    if (
-        ordered.Right
-    ) {
-
-        const wrist =
-            ordered.Right[0];
-
-        let offset =
-            63;
-
-        ordered.Right.forEach(
-            landmark => {
-
-                vector[offset++] =
-                    landmark.x -
-                    wrist.x;
-
-                vector[offset++] =
-                    landmark.y -
-                    wrist.y;
-
-                vector[offset++] =
-                    landmark.z -
-                    wrist.z;
-
-            }
-        );
-
-    }
-
-    sequence.push(
-        vector
-    );
-
-    if (
-        sequence.length >
-        SEQUENCE_LENGTH
-    ) {
-
-        sequence =
-            sequence.slice(
-                -SEQUENCE_LENGTH
-            );
-
-    }
-
-    if (
-        sequence.length ===
-        SEQUENCE_LENGTH &&
-        !predictionBusy
-    ) {
-
-        predictionBusy =
-            true;
-
-        const currentSequence =
-            sequence.slice();
-
-        sequence =
-            [];
-
+    // ==========================================
+    // HARDWARE CAMERA & MEDIAPIPE
+    // ==========================================
+    async function startCameraFeed() {
+        if (localStream) return;
         try {
-
-            const results =
-                await predictSequence(
-                    currentSequence
-                );
-
-            if (
-                results &&
-                results.length
-            ) {
-
-                const best =
-                    results[0];
-
-                const confidence =
-                    Number(
-                        best.confidence
-                    ) || 0;
-
-                predictionElement.textContent =
-                    best.label;
-
-                const percent =
-                    confidence *
-                    100;
-
-                confidenceElement.textContent =
-                    "Confidence: " +
-                    percent.toFixed(
-                        1
-                    ) +
-                    "%";
-
-                confidenceFill.style.width =
-                    Math.min(
-                        100,
-                        percent
-                    ) +
-                    "%";
-
-                acceptPrediction(
-                    best.label,
-                    confidence
-                );
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "Prediction error:",
-                error
-            );
-
-        } finally {
-
-            predictionBusy =
-                false;
-
-        }
-
-    }
-
-}
-
-
-// ============================================================
-// AI LOOP
-// ============================================================
-
-async function aiLoop() {
-
-    if (
-        localStream &&
-        hands &&
-        localVideo.readyState >=
-        2
-    ) {
-
-        try {
-
-            processingCanvas.width =
-                localVideo.videoWidth ||
-                640;
-
-            processingCanvas.height =
-                localVideo.videoHeight ||
-                480;
-
-            processingCtx.save();
-
-            processingCtx.translate(
-                processingCanvas.width,
-                0
-            );
-
-            processingCtx.scale(
-                -1,
-                1
-            );
-
-            processingCtx.drawImage(
-                localVideo,
-                0,
-                0,
-                processingCanvas.width,
-                processingCanvas.height
-            );
-
-            processingCtx.restore();
-
-            await hands.send({
-
-                image:
-                    processingCanvas
-
+            updateStatus("Connecting Camera...");
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 960 }, height: { ideal: 720 }, facingMode: "user" },
+                audio: true
             });
+            localVideo.srcObject = localStream;
+            await localVideo.play();
 
-        } catch (error) {
+            landmarkCanvas.width = localVideo.videoWidth || 640;
+            landmarkCanvas.height = localVideo.videoHeight || 480;
 
-            console.error(
-                "AI loop error:",
-                error
-            );
-
+            initMediaPipeEngine();
+            requestAnimationFrame(renderAILoop);
+            updateStatus("Live in Room", "live");
+        } catch (err) {
+            pushToast("Camera Access Denied: " + err.message);
         }
-
     }
 
-    requestAnimationFrame(
-        aiLoop
-    );
-
-}
-
-
-// ============================================================
-// BUTTON EVENTS
-// ============================================================
-
-createButton.addEventListener(
-    "click",
-    async () => {
-
-        try {
-
-            await createRoom();
-
-            await startCamera();
-
-            await connectPredictionSocket();
-
-            initializeHands();
-
-            aiLoop();
-
-        } catch (error) {
-
-            console.error(
-                error
-            );
-
-            setStatus(
-                error.message
-            );
-
-        }
-
-    }
-);
-
-
-joinButton.addEventListener(
-    "click",
-    async () => {
-
-        try {
-
-            await joinRoom();
-
-            await startCamera();
-
-            await connectPredictionSocket();
-
-            initializeHands();
-
-            aiLoop();
-
-        } catch (error) {
-
-            console.error(
-                error
-            );
-
-            setStatus(
-                error.message
-            );
-
-        }
-
-    }
-);
-
-
-cameraButton.addEventListener(
-    "click",
-    startCamera
-);
-
-
-callButton.addEventListener(
-    "click",
-    connectCall
-);
-
-
-hangupButton.addEventListener(
-    "click",
-    hangup
-);
-
-
-clearSubtitleButton.addEventListener(
-    "click",
-    () => {
-
-        remoteSubtitle.textContent =
-            "Waiting for subtitle...";
-
-        voiceTextElement.textContent =
-            "...";
-
-        sendData({
-
-            type:
-                "clear_subtitle"
-
+    function initMediaPipeEngine() {
+        if (hands) return;
+        hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
         });
 
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.65,
+            minTrackingConfidence: 0.65
+        });
+
+        hands.onResults(onHandResults);
+        aiHud.style.display = "flex";
     }
-);
 
+    async function renderAILoop() {
+        if (localStream && hands && localVideo.readyState >= 2 && !isProcessing) {
+            isProcessing = true;
+            try {
+                procCanvas.width = localVideo.videoWidth || 640;
+                procCanvas.height = localVideo.videoHeight || 480;
+                procCtx.drawImage(localVideo, 0, 0, procCanvas.width, procCanvas.height);
+                await hands.send({ image: procCanvas });
+            } catch (err) {
+                console.error("AI frame loop error:", err);
+            } finally {
+                isProcessing = false;
+            }
+        }
+        requestAnimationFrame(renderAILoop);
+    }
 
-// ============================================================
-// VOICE BUTTONS
-// ============================================================
+    // ==========================================
+    // LANDMARK TRACKING & SIGN CLASSIFICATION
+    // ==========================================
+    function onHandResults(results) {
+        landmarkCtx.clearRect(0, 0, landmarkCanvas.width, landmarkCanvas.height);
 
-voiceInputButton.addEventListener(
-    "click",
-    startVoiceInput
-);
-
-
-stopVoiceButton.addEventListener(
-    "click",
-    stopVoiceInput
-);
-
-
-autoSpeakButton.addEventListener(
-    "click",
-    () => {
-
-        autoSpeakEnabled =
-            !autoSpeakEnabled;
-
-        autoSpeakButton.textContent =
-            autoSpeakEnabled
-                ? "🔊 Auto Voice: ON"
-                : "🔊 Auto Voice: OFF";
-
-        autoSpeakButton.classList.toggle(
-            "active",
-            autoSpeakEnabled
-        );
-
-        if (
-            !autoSpeakEnabled &&
-            "speechSynthesis" in window
-        ) {
-
-            window.speechSynthesis.cancel();
-
+        if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+            sequence = [];
+            aiLabel.textContent = "No Hands";
+            aiMeter.style.width = "0%";
+            return;
         }
 
-    }
-);
-
-
-speakRemoteButton.addEventListener(
-    "click",
-    () => {
-
-        const text =
-            voiceTextElement
-                .textContent
-                .trim();
-
-        if (
-            text &&
-            text !==
-            "..."
-        ) {
-
-            speakText(
-                text
-            );
-
+        if (showSkeleton) {
+            for (const marks of results.multiHandLandmarks) {
+                drawConnectors(landmarkCtx, marks, HAND_CONNECTIONS, { color: "#10b981", lineWidth: 3 });
+                drawLandmarks(landmarkCtx, marks, { color: "#ffffff", lineWidth: 1, radius: 3 });
+            }
         }
 
+        const ordered = { Left: null, Right: null };
+        if (results.multiHandedness) {
+            results.multiHandedness.forEach((handedness, idx) => {
+                ordered[handedness.label] = results.multiHandLandmarks[idx];
+            });
+        }
+
+        const vector = new Array(FEATURES).fill(0);
+        if (ordered.Left) {
+            const wrist = ordered.Left[0];
+            let off = 0;
+            ordered.Left.forEach(lm => {
+                vector[off++] = lm.x - wrist.x;
+                vector[off++] = lm.y - wrist.y;
+                vector[off++] = lm.z - wrist.z;
+            });
+        }
+        if (ordered.Right) {
+            const wrist = ordered.Right[0];
+            let off = 63;
+            ordered.Right.forEach(lm => {
+                vector[off++] = lm.x - wrist.x;
+                vector[off++] = lm.y - wrist.y;
+                vector[off++] = lm.z - wrist.z;
+            });
+        }
+
+        sequence.push(vector);
+        if (sequence.length > SEQUENCE_LENGTH) sequence = sequence.slice(-SEQUENCE_LENGTH);
+
+        if (sequence.length === SEQUENCE_LENGTH) {
+            predictSequence(sequence);
+            sequence = sequence.slice(-15);
+        }
     }
-);
 
+    function connectSocket() {
+        if (websocket) return;
+        const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+        websocket = new WebSocket(`${proto}//${window.location.host}/ws`);
 
-// ============================================================
-// INITIALIZE
-// ============================================================
+        websocket.onopen = () => pushToast("AI Engine Connected 🧠");
+        websocket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === "prediction" && data.results?.length) {
+                    processPrediction(data.results[0]);
+                }
+            } catch (err) { console.error(err); }
+        };
+    }
 
-initializeSpeechRecognition();
+    function predictSequence(seq) {
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+            websocket.send(JSON.stringify({ type: "predict", sequence: seq }));
+        }
+    }
 
-setStatus(
-    "Create or join a room."
-);
+    function processPrediction(best) {
+        const conf = Number(best.confidence) || 0;
+        aiLabel.textContent = best.label;
+        aiMeter.style.width = `${Math.min(100, conf * 100)}%`;
 
-</script>
+        if (conf < CONFIDENCE_THRESHOLD) return;
 
+        if (best.label === candidateLabel) {
+            candidateCount++;
+        } else {
+            candidateLabel = best.label;
+            candidateCount = 1;
+        }
+
+        if (candidateCount >= 2 && best.label !== lastAcceptedSign) {
+            lastAcceptedSign = best.label;
+            signHistory.push(best.label);
+            const sentence = signHistory.slice(-4).map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ") + ".";
+
+            sendPeerData({ type: "subtitle", text: sentence });
+            appendTranscript("You (ISL)", sentence, true);
+        }
+    }
+
+    // ==========================================
+    // WEBRTC PEER CONNECTION
+    // ==========================================
+    async function setupPeer(customId = null) {
+        return new Promise((resolve, reject) => {
+            peer = customId ? new Peer(customId) : new Peer();
+            peer.on("open", () => resolve(peer));
+            peer.on("call", (call) => {
+                call.answer(localStream);
+                bindMedia(call);
+            });
+            peer.on("connection", (conn) => bindData(conn));
+            peer.on("error", (err) => {
+                pushToast("Peer error: " + err.message);
+                reject(err);
+            });
+        });
+    }
+
+    function bindData(conn) {
+        dataConn = conn;
+        dataConn.on("open", () => {
+            pushToast("Participant connected 🤝");
+            hangupBtn.disabled = false;
+        });
+        dataConn.on("data", (data) => {
+            if (data.type === "subtitle" || data.type === "voice_text") {
+                renderSubtitle(data.text);
+                appendTranscript("Remote", data.text, false);
+                if (autoSpeak) speakText(data.text);
+            }
+        });
+    }
+
+    function bindMedia(call) {
+        mediaConn = call;
+        call.on("stream", (remoteStream) => {
+            remoteVideo.srcObject = remoteStream;
+            remoteVideo.play().catch(() => {});
+        });
+        call.on("close", () => {
+            remoteVideo.srcObject = null;
+            renderSubtitle("");
+        });
+    }
+
+    function sendPeerData(payload) {
+        if (dataConn && dataConn.open) dataConn.send(payload);
+    }
+
+    // ==========================================
+    // CALL CONTROLS & EVENT LISTENERS
+    // ==========================================
+    createRoomBtn.addEventListener("click", async () => {
+        roomCode = roomInput.value.trim().toUpperCase() || "ISL" + Math.random().toString(36).slice(2, 7).toUpperCase();
+        currentRoomText.textContent = roomCode;
+        sharePill.style.display = "flex";
+
+        await startCameraFeed();
+        connectSocket();
+        await setupPeer(`isl-v2-${roomCode}`);
+        pushToast("Room Ready! Share the code or link.");
+    });
+
+    joinRoomBtn.addEventListener("click", async () => {
+        const code = roomInput.value.trim().toUpperCase();
+        if (!code) return pushToast("Please enter a room code");
+        roomCode = code;
+        currentRoomText.textContent = roomCode;
+        sharePill.style.display = "flex";
+
+        await startCameraFeed();
+        connectSocket();
+        await setupPeer();
+
+        const remoteId = `isl-v2-${roomCode}`;
+        const call = peer.call(remoteId, localStream);
+        bindMedia(call);
+        const conn = peer.connect(remoteId);
+        bindData(conn);
+    });
+
+    // Voice to Text (STT)
+    const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechAPI) {
+        recognition = new SpeechAPI();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+
+        recognition.onresult = (evt) => {
+            let finalResult = "";
+            for (let i = evt.resultIndex; i < evt.results.length; i++) {
+                if (evt.results[i].isFinal) finalResult += evt.results[i][0].transcript;
+            }
+            if (finalResult.trim()) {
+                sendPeerData({ type: "voice_text", text: finalResult.trim() });
+                appendTranscript("You (Voice)", finalResult.trim(), true);
+            }
+        };
+
+        recognition.onend = () => {
+            speechActive = false;
+            voiceToggle.classList.remove("active");
+            updateStatus("Live in Room", "live");
+        };
+    }
+
+    voiceToggle.addEventListener("click", () => {
+        if (!recognition) return pushToast("Voice recognition not supported in browser.");
+        if (!speechActive) {
+            recognition.start();
+            speechActive = true;
+            voiceToggle.classList.add("active");
+            updateStatus("Listening to Speech...", "speaking");
+        } else {
+            recognition.stop();
+        }
+    });
+
+    function speakText(txt) {
+        if (!("speechSynthesis" in window)) return;
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(txt);
+        window.speechSynthesis.speak(msg);
+    }
+
+    // Dock Toggles
+    cameraToggle.addEventListener("click", () => {
+        if (localStream) {
+            const track = localStream.getVideoTracks()[0];
+            track.enabled = !track.enabled;
+            cameraToggle.classList.toggle("active", track.enabled);
+        }
+    });
+
+    skeletonToggle.addEventListener("click", () => {
+        showSkeleton = !showSkeleton;
+        skeletonToggle.classList.toggle("active", showSkeleton);
+    });
+
+    studioToggle.addEventListener("click", () => {
+        studioMode = !studioMode;
+        localPod.classList.toggle("studio-mode", studioMode);
+        studioToggle.classList.toggle("active", studioMode);
+        pushToast(`Studio Contrast Mode: ${studioMode ? 'ON' : 'OFF'}`);
+    });
+
+    guideToggle.addEventListener("click", () => {
+        signingGuide.classList.toggle("hidden");
+        guideToggle.classList.toggle("active", !signingGuide.classList.contains("hidden"));
+    });
+
+    ttsToggle.addEventListener("click", () => {
+        autoSpeak = !autoSpeak;
+        ttsToggle.classList.toggle("active", autoSpeak);
+        pushToast(`Auto Voice Readout: ${autoSpeak ? 'ON' : 'OFF'}`);
+    });
+
+    drawerToggle.addEventListener("click", () => transcriptDrawer.classList.toggle("open"));
+    closeDrawer.addEventListener("click", () => transcriptDrawer.classList.remove("open"));
+
+    hangupBtn.addEventListener("click", () => {
+        if (mediaConn) mediaConn.close();
+        if (dataConn) dataConn.close();
+        remoteVideo.srcObject = null;
+        renderSubtitle("");
+        hangupBtn.disabled = true;
+        pushToast("Call ended");
+    });
+    </script>
 </body>
 </html>
