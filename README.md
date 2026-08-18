@@ -27,7 +27,11 @@ The application combines:
 * TensorFlow/Keras V4 classification model
 * FastAPI backend
 * WebSocket communication
+<<<<<<< HEAD
 * WebRTC / PeerJS video communication
+=======
+* WebRTC / browser video communication
+>>>>>>> a197dd5 (Update README with main video call link)
 * Live English sentence generation
 * Voice-to-text communication
 * Text-to-speech output
@@ -108,6 +112,7 @@ The web interface displays the model's prediction confidence for the current rec
 The frontend uses stable-prediction logic and hand-release behavior to reduce repeated recognition of the same sign.
 
 ### Voice-to-Text Communication
+<<<<<<< HEAD
 
 Users can speak through the browser microphone and convert speech into text.
 
@@ -136,6 +141,51 @@ The signer view can use enhanced contrast styling to improve hand and upper-body
 ### Mouse and Interaction Effects
 
 The interface includes lightweight interaction effects designed to provide a more polished desktop experience without interfering with camera and AI processing.
+=======
+
+Users can speak through the browser microphone and convert speech into text.
+
+The recognized text can be sent to the opposite participant during a video call.
+
+### Text-to-Speech Communication
+
+Incoming subtitle or voice text can be read aloud using browser speech synthesis.
+
+### Live Transcript
+
+The video-call interface can maintain a live conversation transcript containing recognized sign messages and voice messages.
+
+### Signing Safe Area
+
+The interface provides a visual signing guide that helps the signer keep the hands and upper body inside an appropriate camera region.
+
+### Hand Landmark Visualization
+
+The interface can display the detected hand skeleton and landmarks over the signer's camera feed.
+
+### Studio Contrast Mode
+
+The signer view can use enhanced contrast styling to improve hand and upper-body visibility.
+
+### Mouse and Interaction Effects
+
+The interface includes lightweight interaction effects designed to provide a more polished desktop experience without interfering with camera and AI processing.
+
+### Controls
+
+The interface provides accessible controls for:
+
+* Create Room
+* Join Room
+* Camera control
+* Hand skeleton display
+* Signing guide
+* Studio contrast mode
+* Voice input
+* Auto voice output
+* Live transcript
+* Hang up
+>>>>>>> a197dd5 (Update README with main video call link)
 
 ## System Architecture
 
@@ -176,12 +226,20 @@ The interface includes lightweight interaction effects designed to provide a mor
                 |
                 v
       ┌───────────────────┐
+<<<<<<< HEAD
       │ WebSocket         │
+=======
+      │ WebSocket          │
+>>>>>>> a197dd5 (Update README with main video call link)
       └─────────┬─────────┘
                 |
                 v
       ┌───────────────────┐
+<<<<<<< HEAD
       │ FastAPI Server    │
+=======
+      │ FastAPI Server     │
+>>>>>>> a197dd5 (Update README with main video call link)
       └─────────┬─────────┘
                 |
                 v
